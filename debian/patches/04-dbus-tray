@@ -256,7 +256,7 @@ Index: sway-regolith/swaybar/render.c
 ===================================================================
 --- sway-regolith.orig/swaybar/render.c
 +++ sway-regolith/swaybar/render.c
-@@ -160,6 +160,7 @@ static void render_sharp_line(cairo_t *c
+@@ -159,6 +159,7 @@ static void render_sharp_line(cairo_t *c
  
  static enum hotspot_event_handling block_hotspot_callback(
  		struct swaybar_output *output, struct swaybar_hotspot *hotspot,
@@ -264,7 +264,7 @@ Index: sway-regolith/swaybar/render.c
  		double x, double y, uint32_t button, bool released, void *data) {
  	struct i3bar_block *block = data;
  	struct status_line *status = output->bar->status;
-@@ -601,6 +602,7 @@ static uint32_t render_binding_mode_indi
+@@ -612,6 +613,7 @@ static uint32_t render_binding_mode_indi
  
  static enum hotspot_event_handling workspace_hotspot_callback(
  		struct swaybar_output *output, struct swaybar_hotspot *hotspot,
