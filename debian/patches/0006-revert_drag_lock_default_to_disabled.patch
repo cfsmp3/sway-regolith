@@ -1,0 +1,43 @@
+From 14fbe9242fd43c5f58b2b55ec11bd1ead9dab3eb Mon Sep 17 00:00:00 2001
+From: Simon Ser <contact@emersion.fr>
+Date: Wed, 9 Jul 2025 10:51:17 +0200
+Subject: [PATCH] Revert drag_lock default to disabled
+
+I misunderstood the recommendation in the libinput release notes.
+Instead of making enabled_sticky the default, leave the default
+set to disabled.
+
+Fixes: bbadf9b8b10d ("Add support for LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_STICKY")
+Closes: https://github.com/swaywm/sway/issues/8758
+---
+ sway/input/libinput.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/sway/input/libinput.c b/sway/input/libinput.c
+index b98c4cc86b..fd7533d998 100644
+--- a/sway/input/libinput.c
++++ b/sway/input/libinput.c
+@@ -272,10 +272,6 @@ bool sway_input_configure_libinput_device(struct sway_input_device *input_device
+ 	}
+ 	if (ic->drag_lock != INT_MIN) {
+ 		changed |= set_tap_drag_lock(device, ic->drag_lock);
+-	} else {
+-#if HAVE_LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_STICKY
+-		changed |= set_tap_drag_lock(device, LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_STICKY);
+-#endif
+ 	}
+ 	if (ic->pointer_accel != FLT_MIN) {
+ 		changed |= set_accel_speed(device, ic->pointer_accel);
+@@ -358,12 +354,8 @@ void sway_input_reset_libinput_device(struct sway_input_device *input_device) {
+ 		libinput_device_config_tap_get_default_button_map(device));
+ 	changed |= set_tap_drag(device,
+ 		libinput_device_config_tap_get_default_drag_enabled(device));
+-#if HAVE_LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_STICKY
+-	changed |= set_tap_drag_lock(device, LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_STICKY);
+-#else
+ 	changed |= set_tap_drag_lock(device,
+ 		libinput_device_config_tap_get_default_drag_lock_enabled(device));
+-#endif
+ 	changed |= set_accel_speed(device,
+ 		libinput_device_config_accel_get_default_speed(device));
+ 	changed |= set_rotation_angle(device,
