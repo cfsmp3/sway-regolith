@@ -5,6 +5,7 @@ export DH_VERBOSE=1
 export DH_OPTIONS=-v
 
 include /usr/share/dpkg/pkg-info.mk
+include /usr/share/dpkg/architecture.mk
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_CFLAGS_MAINT_APPEND = -Wno-error=deprecated-declarations
 
@@ -18,6 +19,15 @@ override_dh_auto_configure:
 .PHONY: override_dh_missing
 override_dh_missing:
 	dh_missing --fail-missing
+
+# 01-regolith-trawl: set_from_resource must fall back cleanly when trawl is
+# unreachable (no session bus here), with GLib criticals made fatal.
+.PHONY: override_dh_auto_test
+override_dh_auto_test:
+	dh_auto_test
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	sh debian/tests/set-from-resource-fallback.sh obj-$(DEB_HOST_GNU_TYPE)/sway/sway
+endif
 
 .PHONY: override_dh_install
 override_dh_install:
