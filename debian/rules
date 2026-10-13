@@ -13,7 +13,11 @@ export DEB_CFLAGS_MAINT_APPEND = -Wno-error=deprecated-declarations
 
 .PHONY: override_dh_auto_configure
 override_dh_auto_configure:
-	dh_auto_configure -- --libexecdir=lib
+	dh_auto_configure -- --libexecdir=lib -Ddefault-wallpaper=false
+
+.PHONY: override_dh_auto_install
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
 
 .PHONY: override_dh_missing
 override_dh_missing:
