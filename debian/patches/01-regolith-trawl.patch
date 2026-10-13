@@ -9,7 +9,7 @@ Index: sway-regolith/meson.build
  	'c',
  	version: '1.12',
  	license: 'MIT',
-@@ -80,6 +80,7 @@ math = cc.find_library('m')
+@@ -81,6 +81,7 @@ math = cc.find_library('m')
  rt = cc.find_library('rt')
  xcb_icccm = wlroots_features['xwayland'] ? dependency('xcb-icccm') : null_dep
  threads = dependency('threads') # for pthread_setschedparam and pthread_atfork
@@ -142,7 +142,7 @@ Index: sway-regolith/sway/meson.build
  	'commands/show_marks.c',
  	'commands/shortcuts_inhibitor.c',
  	'commands/smart_borders.c',
-@@ -234,6 +235,7 @@ sway_deps = [
+@@ -235,6 +236,7 @@ sway_deps = [
  	xkbcommon,
  	xcb,
  	xcb_icccm,
