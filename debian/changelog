@@ -1,3 +1,17 @@
+sway-regolith (1.11-2) resolute; urgency=medium
+
+  * fix(01-regolith-trawl): reuse one trawl proxy, free errors and temporaries
+  * test: check set_from_resource fallback during the build
+  * fix: do not ship sway's default wallpapers (file conflict with
+    sway-backgrounds)
+  * fix: import Debian sway 1.11-3 patches 0005 and 0006
+  * chore: remove quilt backup files from debian/patches
+  * test: check during the build that the package ships no sway config
+  * test: add autopkgtests for the Regolith patches
+  * test: guard against trawl proxy leaks on config reload
+
+ -- Regolith Linux <regolith.linux@gmail.com>  Tue, 13 Oct 2026 18:00:00 +0000
+
 sway-regolith (1.11-1) resolute; urgency=medium
 
   * chore: fix changelog version
