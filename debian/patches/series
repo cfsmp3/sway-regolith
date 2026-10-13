@@ -1,6 +1,8 @@
 0001-Install-zsh-completions-into-the-correct-directory.patch
 0002-Modify-default-configuration-for-Debian.patch
 0004-feat-comment-default-output-setting.patch
+0005-xdg-shell-fix-reported-WM-capabilities.patch
+0006-revert_drag_lock_default_to_disabled.patch
 01-regolith-trawl.patch
 02-version-fix.patch
 04-dbus-tray
