@@ -1,10 +1,18 @@
-sway-regolith (1.12-1) unstable; urgency=medium
+sway-regolith (1.12-1) stonking; urgency=medium
 
+  [ Soumya Ranjan Patnaik ]
   * Adopt Debian's sway 1.12-1 packaging with Regolith patches:
     trawl integration, swaybar dbusmenu tray, reproducible version,
     and stock config/session removal.
 
- -- Soumya Ranjan Patnaik <soumya.patnaik@canonical.com>  Sat, 03 Oct 2026 00:35:26 +0530
+  [ rego-port-bot ]
+  * chore: refresh patches for sway 1.12 (no fuzz, no offsets)
+  * fix(01-regolith-trawl): reuse one trawl proxy, free errors and temporaries
+  * fix: do not build sway-backgrounds; build without sway's default wallpapers
+  * chore: drop Debian's Salsa CI file
+  * test: add build-time checks and autopkgtests for the Regolith patches
+
+ -- Regolith Linux <regolith.linux@gmail.com>  Tue, 13 Oct 2026 12:00:00 +0000
 
 sway (1.12-1) unstable; urgency=medium
 
