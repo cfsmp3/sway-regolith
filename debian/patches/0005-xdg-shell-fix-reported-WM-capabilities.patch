@@ -1,0 +1,30 @@
+From: Nikola Kocic <nikola-kocic@users.noreply.github.com>
+Date: Tue, 9 Sep 2025 13:43:20 +0200
+Subject: xdg-shell: fix reported WM capabilities
+Origin: upstream, https://github.com/swaywm/sway/commit/516a3de4ca6c2378b875f62ffa6008d1cfa0cba9
+
+Previously it was reporting window_menu and maximize instead of fullscreen because wlr_xdg_toplevel_set_wm_capabilities expects a bitmask (WLR_XDG_TOPLEVEL_WM_CAPABILITIES_*), and XDG_TOPLEVEL_WM_CAPABILITIES_* are supposed to be used as values in wl_array, so the values are different:
+XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN = 3
+WLR_XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN = 4
+
+(cherry picked from commit c5456be7506adece2cdf922ed6d919db597944ab)
+---
+ sway/desktop/xdg_shell.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sway/desktop/xdg_shell.c b/sway/desktop/xdg_shell.c
+index 3aed4ec7..03af2d51 100644
+--- a/sway/desktop/xdg_shell.c
++++ b/sway/desktop/xdg_shell.c
+@@ -290,7 +290,7 @@ static void handle_commit(struct wl_listener *listener, void *data) {
+ 		// XXX: https://github.com/swaywm/sway/issues/2176
+ 		wlr_xdg_surface_schedule_configure(xdg_surface);
+ 		wlr_xdg_toplevel_set_wm_capabilities(view->wlr_xdg_toplevel,
+-			XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN);
++			WLR_XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN);
+ 		// TODO: wlr_xdg_toplevel_set_bounds()
+ 		return;
+ 	}
+-- 
+2.51.0
+
