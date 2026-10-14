@@ -380,7 +380,7 @@ Index: sway-regolith/swaybar/tray/dbusmenu.c
 ===================================================================
 --- /dev/null
 +++ sway-regolith/swaybar/tray/dbusmenu.c
-@@ -0,0 +1,1348 @@
+@@ -0,0 +1,1350 @@
 +#define _POSIX_C_SOURCE 200809L
 +#include <linux/input-event-codes.h>
 +#include <pool-buffer.h>
@@ -618,7 +618,9 @@ Index: sway-regolith/swaybar/tray/dbusmenu.c
 +			}
 +			free(item->label);
 +			free(item->icon_name);
-+			free(item->icon_data);
++			if (item->icon_data) {
++				cairo_surface_destroy(item->icon_data);
++			}
 +			free(item);
 +		}
 +	}
