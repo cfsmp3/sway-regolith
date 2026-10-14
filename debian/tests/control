@@ -19,3 +19,7 @@ Restrictions: allow-stderr
 Tests: trawl-reload-memory
 Depends: sway-regolith, trawld, trawldb, dbus, jq
 Restrictions: allow-stderr
+
+Tests: trawl-restart
+Depends: sway-regolith, trawld, trawldb, dbus, jq
+Restrictions: allow-stderr
