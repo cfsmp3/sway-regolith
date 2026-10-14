@@ -21,7 +21,7 @@ Index: sway-regolith/sway/commands/set_from_resource.c
 ===================================================================
 --- /dev/null
 +++ sway-regolith/sway/commands/set_from_resource.c
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,83 @@
 +#define _POSIX_C_SOURCE 200809L
 +#include "log.h"
 +#include "stringop.h"
@@ -31,10 +31,18 @@ Index: sway-regolith/sway/commands/set_from_resource.c
 +#include <stdlib.h>
 +#include <string.h>
 +
-+// One trawl proxy for the life of the process. Creating a proxy per
++// One trawl proxy per config load, shared by all set_from_resource
++// directives of that load and released when the load ends. A proxy per
 +// directive leaked every proxy (and its cached copy of all resources) on
-+// each config load and reload.
++// each load. A proxy kept for the life of the process breaks when trawld
++// restarts: sway runs no GLib main loop, so the proxy never sees the bus name
++// move to the new trawld and keeps calling the old one, and every later
++// lookup fails.
 +static conf_client trawl_proxy = NULL;
++
++void set_from_resource_end_config_load(void) {
++	g_clear_object(&trawl_proxy);
++}
 +
 +// Returns the resource value (caller frees) or NULL if trawl is unavailable,
 +// the lookup failed or the value is empty.
@@ -44,12 +52,17 @@ Index: sway-regolith/sway/commands/set_from_resource.c
 +		sway_log(SWAY_DEBUG, "set_from_resource: trawl unavailable: %s",
 +			err ? err->message : "unknown error");
 +		g_clear_error(&err);
-+		trawl_proxy = NULL;
++		g_clear_object(&trawl_proxy);
 +		return NULL;
 +	}
 +
 +	char *value = NULL;
-+	if (!conf_client_get(trawl_proxy, key, &value, &err)) {
++	bool found = conf_client_get(trawl_proxy, key, &value, &err);
++	if (!config->reading) {
++		// A runtime command, not part of a config load.
++		set_from_resource_end_config_load();
++	}
++	if (!found) {
 +		sway_log(SWAY_DEBUG, "set_from_resource: lookup of '%s' failed: %s",
 +			key, err ? err->message : "unknown error");
 +		g_clear_error(&err);
@@ -96,11 +109,13 @@ Index: sway-regolith/include/sway/commands.h
 ===================================================================
 --- sway-regolith.orig/include/sway/commands.h
 +++ sway-regolith/include/sway/commands.h
-@@ -173,6 +173,7 @@ sway_cmd cmd_resize;
+@@ -173,6 +173,9 @@ sway_cmd cmd_resize;
  sway_cmd cmd_scratchpad;
  sway_cmd cmd_seamless_mouse;
  sway_cmd cmd_set;
 +sway_cmd cmd_set_from_resource;
++// Releases the trawl proxy that set_from_resource shares within a config load.
++void set_from_resource_end_config_load(void);
  sway_cmd cmd_shortcuts_inhibitor;
  sway_cmd cmd_show_marks;
  sway_cmd cmd_smart_borders;
@@ -173,3 +188,15 @@ Index: sway-regolith/sway/meson.build
  ]
  
  if wlroots_features['xwayland']
+Index: sway-regolith/sway/config.c
+===================================================================
+--- sway-regolith.orig/sway/config.c
++++ sway-regolith/sway/config.c
+@@ -506,6 +506,7 @@ bool load_main_config(const char *file,
+ 	config->reading = true;
+ 
+ 	bool success = load_config(path, config, &config->swaynag_config_errors);
++	set_from_resource_end_config_load();
+ 
+ 	if (validating) {
+ 		free_config(config);
