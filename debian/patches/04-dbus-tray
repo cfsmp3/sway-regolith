@@ -296,7 +296,7 @@ Index: sway-regolith/swaybar/tray/item.c
  	const char *method = NULL;
  	struct tray_binding *binding = NULL;
  	wl_list_for_each(binding, &sni->tray->bar->config->tray_bindings, link) {
-@@ -365,7 +367,11 @@ static void handle_click(struct swaybar_
+@@ -365,7 +367,15 @@ static void handle_click(struct swaybar_
  		method = "ContextMenu";
  	}
  
@@ -304,12 +304,16 @@ Index: sway-regolith/swaybar/tray/item.c
 +	if (strcmp(method, "ContextMenu") == 0) {
 +		if (sni->menu && !sni->tray->menu) {
 +			swaybar_dbusmenu_open(sni, output, seat, serial, x, y);
++		} else if (!sni->menu) {
++			// No dbusmenu: let the item show its own menu, as stock swaybar does.
++			sd_bus_call_method_async(sni->tray->bus, NULL, sni->service, sni->path,
++					sni->interface, "ContextMenu", NULL, NULL, "ii", x, y);
 +		}
 +	} else if (strncmp(method, "Scroll", strlen("Scroll")) == 0) {
  		char dir = method[strlen("Scroll")];
  		char *orientation = (dir == 'U' || dir == 'D') ? "vertical" : "horizontal";
  		int sign = (dir == 'U' || dir == 'L') ? -1 : 1;
-@@ -385,6 +391,7 @@ static int cmp_sni_id(const void *item,
+@@ -385,6 +395,7 @@ static int cmp_sni_id(const void *item,
  
  static enum hotspot_event_handling icon_hotspot_callback(
  		struct swaybar_output *output, struct swaybar_hotspot *hotspot,
@@ -317,7 +321,7 @@ Index: sway-regolith/swaybar/tray/item.c
  		double x, double y, uint32_t button, bool released, void *data) {
  	sway_log(SWAY_DEBUG, "Clicked on %s", (char *)data);
  
-@@ -406,7 +413,8 @@ static enum hotspot_event_handling icon_
+@@ -406,7 +417,8 @@ static enum hotspot_event_handling icon_
  				(int) output->output_height - config->gaps.bottom - y);
  
  		sway_log(SWAY_DEBUG, "Guessing click position at (%d, %d)", global_x, global_y);
