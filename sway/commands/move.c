@@ -445,6 +445,7 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 	struct sway_workspace *old_ws = container->pending.workspace;
 	struct sway_output *old_output = old_ws ? old_ws->output : NULL;
 	struct sway_node *destination = NULL;
+	struct sway_workspace *destination_ws = NULL;
 
 	// determine destination
 	if (strcasecmp(argv[0], "workspace") == 0) {
@@ -513,6 +514,7 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 			arrange_workspace(ws);
 		}
 		free(ws_name);
+		destination_ws = ws;
 		struct sway_container *dst = seat_get_focus_inactive_tiling(seat, ws);
 		destination = dst ? &dst->node : &ws->node;
 	} else if (strcasecmp(argv[0], "output") == 0) {
@@ -553,6 +555,7 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 
 	// save focus, in case it needs to be restored
 	struct sway_node *focus = seat_get_focus(seat);
+	struct sway_workspace *focused_ws = seat_get_focused_workspace(seat);
 
 	// move container
 	if (container_is_scratchpad_hidden_or_child(container)) {
@@ -606,6 +609,16 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 		}
 	}
 	seat_set_focus(seat, focus);
+
+	// Like i3: moving a container from the focused workspace to another
+	// workspace makes that workspace the target of "workspace back_and_forth".
+	// The container itself may be gone by now (a split container moved to an
+	// empty workspace is absorbed by it), so use the destination workspace.
+	if (destination_ws && old_ws && old_ws == focused_ws &&
+			destination_ws != old_ws && destination_ws->name) {
+		free(seat->prev_workspace_name);
+		seat->prev_workspace_name = strdup(destination_ws->name);
+	}
 
 	// clean-up, destroying parents if the container was the last child
 	if (old_parent) {

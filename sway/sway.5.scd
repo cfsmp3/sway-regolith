@@ -255,7 +255,9 @@ set|plus|minus|toggle <amount>
 *move* [--no-auto-back-and-forth] [container|window] [to] workspace [number] <name>
 	Moves the focused container to the specified workspace. The string _number_
 	is optional and is used to match a workspace with the same number, even if
-	it has a different name.
+	it has a different name. When the container was on the focused workspace and
+	lands on another one, that workspace becomes the target of _workspace
+	back_and_forth_ and _move ... workspace back_and_forth_.
 
 *move* [container|window] [to] workspace prev|next|current
 	Moves the focused container to the previous, next or current workspace on
