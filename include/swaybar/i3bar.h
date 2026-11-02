@@ -16,6 +16,7 @@ struct i3bar_block {
 	bool separator;
 	int separator_block_width;
 	bool markup;
+	bool use_short; // rendered with short_text because the bar is full
 	// Airblader features
 	uint32_t background;
 	uint32_t border;

@@ -174,14 +174,18 @@ static void i3bar_block_unref_callback(void *data) {
 	i3bar_block_unref(data);
 }
 
+static bool block_has_short_text(struct i3bar_block *block) {
+	return block->short_text && *block->short_text;
+}
+
 static uint32_t render_status_block(struct render_context *ctx,
-		struct i3bar_block *block, double *x, bool edge, bool use_short_text) {
+		struct i3bar_block *block, double *x, bool edge) {
 	if (!block->full_text || !*block->full_text) {
 		return 0;
 	}
 
 	char* text = block->full_text;
-	if (use_short_text && block->short_text && *block->short_text) {
+	if (block->use_short && block_has_short_text(block)) {
 		text = block->short_text;
 	}
 
@@ -353,9 +357,13 @@ static void predict_status_block_pos(cairo_t *cairo,
 
 	struct swaybar_config *config = output->bar->config;
 
+	const char *text = block->full_text;
+	if (block->use_short && block_has_short_text(block)) {
+		text = block->short_text;
+	}
 	int text_width, text_height;
 	get_text_size(cairo, config->font_description, &text_width, &text_height, NULL, 1,
-			block->markup, "%s", block->full_text);
+			block->markup, "%s", text);
 
 	int margin = 3;
 	double ws_vertical_padding = config->status_padding;
@@ -498,10 +506,10 @@ static uint32_t predict_binding_mode_indicator_length(cairo_t *cairo,
 
 static uint32_t render_status_line_i3bar(struct render_context *ctx, double *x) {
 	struct swaybar_output *output = ctx->output;
+	struct wl_list *blocks = &output->bar->status->blocks;
 	uint32_t max_height = 0;
 	bool edge = *x == output->width;
 	struct i3bar_block *block;
-	bool use_short_text = false;
 
 	cairo_t *cairo = ctx->cairo;
 	double reserved_width =
@@ -509,16 +517,36 @@ static uint32_t render_status_line_i3bar(struct render_context *ctx, double *x) 
 			predict_binding_mode_indicator_length(cairo, output) +
 			3; // require a bit of space for margin
 
-	double predicted_full_pos =
-			predict_status_line_pos(cairo, output, *x);
+	wl_list_for_each(block, blocks, link) {
+		block->use_short = false;
+	}
+	double pos = predict_status_line_pos(cairo, output, *x);
 
-	if (predicted_full_pos < reserved_width) {
-		use_short_text = true;
+	// Like i3bar: when the status line doesn't fit, switch blocks to their
+	// short text one at a time, starting from the left, until it fits. Blocks
+	// sharing a name are one logical block and are switched together. The
+	// list holds the blocks from right to left.
+	wl_list_for_each_reverse(block, blocks, link) {
+		if (pos >= reserved_width) {
+			break;
+		}
+		if (block_has_short_text(block)) {
+			block->use_short = true;
+		}
+		if (block->name) {
+			struct i3bar_block *other;
+			wl_list_for_each(other, blocks, link) {
+				if (other->name && strcmp(other->name, block->name) == 0 &&
+						block_has_short_text(other)) {
+					other->use_short = true;
+				}
+			}
+		}
+		pos = predict_status_line_pos(cairo, output, *x);
 	}
 
-	wl_list_for_each(block, &output->bar->status->blocks, link) {
-		uint32_t h = render_status_block(ctx, block, x, edge,
-					use_short_text);
+	wl_list_for_each(block, blocks, link) {
+		uint32_t h = render_status_block(ctx, block, x, edge);
 		max_height = h > max_height ? h : max_height;
 		edge = false;
 	}

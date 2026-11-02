@@ -72,7 +72,9 @@ properties (only _full_text_ is required):
 |- short_text
 :  string
 :  If given and the text needs to be shortened due to space, this will be
-   displayed instead of _full_text_
+   displayed instead of _full_text_. Blocks are shortened one at a time,
+   starting from the leftmost one, until the status line fits. Blocks with
+   the same _name_ are shortened together
 |- color
 :  string
 :  The text color to use in #RRGGBBAA or #RRGGBB notation
