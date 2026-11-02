@@ -730,9 +730,10 @@ static void ipc_json_describe_container(struct sway_container *c, json_object *o
 	json_object_object_add(object, "urgent", json_object_new_boolean(urgent));
 	json_object_object_add(object, "sticky", json_object_new_boolean(c->is_sticky));
 
-	// sway doesn't track the floating reason, so we can't use "auto_on" or "user_off"
-	json_object_object_add(object, "floating",
-			json_object_new_string(floating ? "user_on" : "auto_off"));
+	const char *floating_str = floating ?
+		(c->floating_by_user ? "user_on" : "auto_on") :
+		(c->floating_by_user ? "user_off" : "auto_off");
+	json_object_object_add(object, "floating", json_object_new_string(floating_str));
 
 	json_object_object_add(object, "fullscreen_mode",
 			json_object_new_int(c->pending.fullscreen_mode));

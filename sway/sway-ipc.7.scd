@@ -381,7 +381,9 @@ node and will have the following properties:
    full workspace, and 2 means global fullscreen
 |- floating
 :  string
-:  Floating state of container. Can be either "auto_off" or "user_on"
+:  Floating state of container: "auto_off" (never changed), "auto_on"
+   (floated automatically because of the window's properties), "user_on" or
+   "user_off" (changed by a command)
 |- scratchpad_state
 :  string
 :  Whether the window is in the scratchpad. Can be either "none" or "fresh"

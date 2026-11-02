@@ -109,6 +109,10 @@ struct sway_container {
 	// directly; it'll also check that the container is floating.
 	bool is_sticky;
 
+	// Whether the floating state was last changed by a command ("user_on" or
+	// "user_off" in i3) rather than set automatically.
+	bool floating_by_user;
+
 	// For C_ROOT, this has no meaning
 	// For other types, this is the position in layout coordinates
 	// Includes borders

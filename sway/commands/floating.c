@@ -48,6 +48,9 @@ struct cmd_results *cmd_floating(int argc, char **argv) {
 	bool wants_floating =
 		parse_boolean(argv[0], container_is_floating(container));
 
+	if (container_is_floating(container) != wants_floating) {
+		container->floating_by_user = true;
+	}
 	container_set_floating(container, wants_floating);
 
 	// Floating containers in the scratchpad should be ignored
