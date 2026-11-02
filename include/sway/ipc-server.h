@@ -19,7 +19,7 @@ void ipc_event_barconfig_update(struct bar_config *bar);
 void ipc_event_bar_state_update(struct bar_config *bar);
 void ipc_event_mode(const char *mode, bool pango);
 void ipc_event_shutdown(const char *reason);
-void ipc_event_binding(struct sway_binding *binding);
+void ipc_event_binding(struct sway_binding *binding, const char *mode);
 void ipc_event_input(const char *change, struct sway_input_device *device);
 void ipc_event_output(void);
 

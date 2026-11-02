@@ -391,7 +391,7 @@ void ipc_event_shutdown(const char *reason) {
 	json_object_put(json);
 }
 
-void ipc_event_binding(struct sway_binding *binding) {
+void ipc_event_binding(struct sway_binding *binding, const char *mode) {
 	if (!ipc_has_event_listeners(IPC_EVENT_BINDING)) {
 		return;
 	}
@@ -472,6 +472,7 @@ void ipc_event_binding(struct sway_binding *binding) {
 	json_object *json = json_object_new_object();
 	json_object_object_add(json, "change", json_object_new_string("run"));
 	json_object_object_add(json, "binding", json_binding);
+	json_object_object_add(json, "mode", json_object_new_string(mode ? mode : "default"));
 	const char *json_string = json_object_to_json_string(json);
 	ipc_send_event(json_string, IPC_EVENT_BINDING);
 	json_object_put(json);

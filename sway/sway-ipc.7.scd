@@ -1757,6 +1757,10 @@ following properties:
 |- change
 :  string
 :[ The change that occurred for the binding. Currently this will only be _run_
+|- mode
+:  string
+:  The name of the binding mode the binding was triggered in, as configured.
+   A binding that switches modes reports the mode it was triggered in
 |- command
 :  string
 :  The command associated with the binding
@@ -1790,7 +1794,8 @@ following properties:
 		"input_code": 0,
 		"symbol": "2",
 		"input_type": "keyboard"
-	}
+	},
+	"mode": "default"
 }
 ```
 

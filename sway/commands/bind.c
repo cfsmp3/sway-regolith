@@ -632,6 +632,9 @@ void seat_execute_command(struct sway_seat *seat, struct sway_binding *binding) 
 		}
 	}
 
+	// The binding event reports the mode the binding was triggered in, even
+	// if the command itself changes the mode.
+	char *mode = strdup(config->current_mode->name);
 	list_t *res_list = execute_command(binding->command, seat, con);
 	bool success = true;
 	for (int i = 0; i < res_list->length; ++i) {
@@ -645,8 +648,9 @@ void seat_execute_command(struct sway_seat *seat, struct sway_binding *binding) 
 	}
 	list_free(res_list);
 	if (success) {
-		ipc_event_binding(binding);
+		ipc_event_binding(binding, mode);
 	}
+	free(mode);
 
 	transaction_commit_dirty();
 }
