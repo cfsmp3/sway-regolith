@@ -80,7 +80,17 @@ struct sway_drag {
 	struct wl_listener destroy;
 };
 
+#define SWAY_CURSOR_PRESSED_BUTTONS_CAP 32
+
+// Mouse buttons pressed while no pointer operation was in progress; mouse
+// bindings match against this set, also when the release ends an operation.
+struct sway_mouse_binding_state {
+	uint32_t pressed_buttons[SWAY_CURSOR_PRESSED_BUTTONS_CAP];
+	size_t pressed_button_count;
+};
+
 struct sway_seat {
+	struct sway_mouse_binding_state mouse_binding_state;
 	struct wlr_seat *wlr_seat;
 	struct sway_cursor *cursor;
 
@@ -258,6 +268,15 @@ enum wlr_edges find_resize_edge(struct sway_container *cont,
 		struct wlr_surface *surface, struct sway_cursor *cursor);
 
 void seatop_begin_default(struct sway_seat *seat);
+
+/**
+ * Run a --release mouse binding for a button released while another seat
+ * operation (for example a click on a surface or title bar) was in progress.
+ */
+void seatop_default_release_binding(struct sway_seat *seat,
+		struct wlr_input_device *device, uint32_t button);
+
+bool seatop_is_default(struct sway_seat *seat);
 
 void seatop_begin_down(struct sway_seat *seat, struct sway_container *con,
 		double sx, double sy);

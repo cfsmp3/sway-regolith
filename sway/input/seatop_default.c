@@ -23,8 +23,6 @@
 
 struct seatop_default_event {
 	struct sway_node *previous_node;
-	uint32_t pressed_buttons[SWAY_CURSOR_PRESSED_BUTTONS_CAP];
-	size_t pressed_button_count;
 	struct gesture_tracker gestures;
 };
 
@@ -122,7 +120,7 @@ enum wlr_edges find_resize_edge(struct sway_container *cont,
  * and pressed button state, otherwise return null.
  */
 static struct sway_binding* get_active_mouse_binding(
-		struct seatop_default_event *e, list_t *bindings, uint32_t modifiers,
+		struct sway_mouse_binding_state *e, list_t *bindings, uint32_t modifiers,
 		bool release, bool on_titlebar, bool on_border, bool on_content,
 		bool on_workspace, const char *identifier) {
 	uint32_t click_region =
@@ -171,7 +169,7 @@ static struct sway_binding* get_active_mouse_binding(
  * Remove a button (and duplicates) from the sorted list of currently pressed
  * buttons.
  */
-static void state_erase_button(struct seatop_default_event *e,
+static void state_erase_button(struct sway_mouse_binding_state *e,
 		uint32_t button) {
 	size_t j = 0;
 	for (size_t i = 0; i < e->pressed_button_count; ++i) {
@@ -192,7 +190,7 @@ static void state_erase_button(struct seatop_default_event *e,
  * Add a button to the sorted list of currently pressed buttons, if there
  * is space.
  */
-static void state_add_button(struct seatop_default_event *e, uint32_t button) {
+static void state_add_button(struct sway_mouse_binding_state *e, uint32_t button) {
 	if (e->pressed_button_count >= SWAY_CURSOR_PRESSED_BUTTONS_CAP) {
 		return;
 	}
@@ -301,7 +299,7 @@ static bool trigger_pointer_button_binding(struct sway_seat *seat,
 		return false;
 	}
 
-	struct seatop_default_event *e = seat->seatop_data;
+	struct sway_mouse_binding_state *e = &seat->mouse_binding_state;
 
 	char *device_identifier = device ? input_device_get_identifier(device)
 		: strdup("*");
@@ -710,7 +708,7 @@ static void handle_pointer_axis(struct sway_seat *seat,
 	struct input_config *ic =
 		input_device ? input_device_get_config(input_device) : NULL;
 	struct sway_cursor *cursor = seat->cursor;
-	struct seatop_default_event *e = seat->seatop_data;
+	struct sway_mouse_binding_state *e = &seat->mouse_binding_state;
 
 	// Determine what's under the cursor
 	struct wlr_surface *surface = NULL;
@@ -1153,4 +1151,31 @@ void seatop_begin_default(struct sway_seat *seat) {
 
 	uint32_t time_msec = get_current_time_in_msec();
 	seatop_rebase(seat, time_msec);
+}
+
+bool seatop_is_default(struct sway_seat *seat) {
+	return seat->seatop_impl == &seatop_impl;
+}
+
+void seatop_default_release_binding(struct sway_seat *seat,
+		struct wlr_input_device *device, uint32_t button) {
+	struct sway_cursor *cursor = seat->cursor;
+	struct wlr_surface *surface = NULL;
+	double sx, sy;
+	struct sway_node *node = node_at_coords(seat,
+			cursor->cursor->x, cursor->cursor->y, &surface, &sx, &sy);
+	struct sway_container *cont = node && node->type == N_CONTAINER ?
+		node->sway_container : NULL;
+	enum wlr_edges edge = cont ? find_edge(cont, surface, cursor) : WLR_EDGE_NONE;
+	bool on_border = edge != WLR_EDGE_NONE;
+	bool on_contents = cont && !on_border && surface;
+	bool on_workspace = node && node->type == N_WORKSPACE;
+	bool on_titlebar = cont && !on_border && !surface;
+
+	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
+	uint32_t modifiers = keyboard ? wlr_keyboard_get_modifiers(keyboard) : 0;
+
+	trigger_pointer_button_binding(seat, device, button,
+		WL_POINTER_BUTTON_STATE_RELEASED, modifiers,
+		on_titlebar, on_border, on_contents, on_workspace);
 }

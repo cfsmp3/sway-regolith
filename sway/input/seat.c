@@ -1560,8 +1560,15 @@ void seatop_unref(struct sway_seat *seat, struct sway_container *con) {
 void seatop_button(struct sway_seat *seat, uint32_t time_msec,
 		struct wlr_input_device *device, uint32_t button,
 		enum wl_pointer_button_state state) {
+	bool in_default = seatop_is_default(seat);
 	if (seat->seatop_impl->button) {
 		seat->seatop_impl->button(seat, time_msec, device, button, state);
+	}
+	// The default seatop handles release bindings itself. Any other seatop
+	// was started by a press that went through it, so check the release
+	// against the mouse bindings here.
+	if (!in_default && state == WL_POINTER_BUTTON_STATE_RELEASED) {
+		seatop_default_release_binding(seat, device, button);
 	}
 }
 
