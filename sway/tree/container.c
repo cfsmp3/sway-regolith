@@ -1141,6 +1141,11 @@ void container_floating_move_to(struct sway_container *con,
 	}
 	struct sway_workspace *new_workspace =
 		output_get_active_workspace(new_output);
+	// i3 compat: a floating container that stays on its output keeps its
+	// workspace, even when that workspace is not the visible one.
+	if (old_workspace && old_workspace->output == new_output) {
+		new_workspace = old_workspace;
+	}
 	if (new_workspace && old_workspace != new_workspace) {
 		container_detach(con);
 		workspace_add_floating(new_workspace, con);
