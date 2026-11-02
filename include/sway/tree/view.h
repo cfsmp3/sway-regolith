@@ -154,6 +154,9 @@ struct sway_xwayland_view {
 
 	struct wlr_scene_surface *image_capture_scene_surface;
 
+	uint32_t transient_for; // WM_TRANSIENT_FOR at map, also when not a managed window
+	uint32_t client_leader; // WM_CLIENT_LEADER at map
+
 	struct wl_listener commit;
 	struct wl_listener request_move;
 	struct wl_listener request_resize;

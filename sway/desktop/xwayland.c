@@ -1,6 +1,7 @@
 #include <float.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_output.h>
@@ -18,6 +19,7 @@
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/server.h"
+#include "sway/tree/root.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
 
@@ -307,6 +309,59 @@ static void set_fullscreen(struct sway_view *view, bool fullscreen) {
 	wlr_xwayland_surface_set_fullscreen(surface, fullscreen);
 }
 
+static xcb_get_property_reply_t *get_x_property(xcb_connection_t *xcb,
+		xcb_window_t win, const char *name, xcb_atom_t type) {
+	xcb_intern_atom_reply_t *atom = xcb_intern_atom_reply(xcb,
+		xcb_intern_atom(xcb, 0, strlen(name), name), NULL);
+	if (!atom) {
+		return NULL;
+	}
+	xcb_get_property_reply_t *reply = xcb_get_property_reply(xcb,
+		xcb_get_property(xcb, 0, win, atom->atom, type, 0, 1), NULL);
+	free(atom);
+	if (reply && (reply->format != 32 || xcb_get_property_value_length(reply) < 4)) {
+		free(reply);
+		return NULL;
+	}
+	return reply;
+}
+
+static void read_float_hints(struct sway_xwayland_view *xwayland_view) {
+	struct wlr_xwayland_surface *xsurface = xwayland_view->view.wlr_xwayland_surface;
+	xwayland_view->transient_for = 0;
+	xwayland_view->client_leader = 0;
+	xcb_connection_t *xcb = server.xwayland.wlr_xwayland ?
+		wlr_xwayland_get_xwm_connection(server.xwayland.wlr_xwayland) : NULL;
+	if (!xcb) {
+		return;
+	}
+	xcb_get_property_reply_t *r = get_x_property(xcb, xsurface->window_id,
+		"WM_TRANSIENT_FOR", XCB_ATOM_WINDOW);
+	if (r) {
+		xwayland_view->transient_for = *(uint32_t *)xcb_get_property_value(r);
+		free(r);
+	}
+	r = get_x_property(xcb, xsurface->window_id, "WM_CLIENT_LEADER", XCB_ATOM_WINDOW);
+	if (r) {
+		xwayland_view->client_leader = *(uint32_t *)xcb_get_property_value(r);
+		free(r);
+	}
+}
+
+struct leader_search {
+	uint32_t window_id;
+	bool found;
+};
+
+static void find_leader_iterator(struct sway_container *con, void *data) {
+	struct leader_search *search = data;
+	if (con->view && con->view->type == SWAY_VIEW_XWAYLAND &&
+			con->view->wlr_xwayland_surface &&
+			con->view->wlr_xwayland_surface->window_id == search->window_id) {
+		search->found = true;
+	}
+}
+
 static bool wants_floating(struct sway_view *view) {
 	if (xwayland_view_from_view(view) == NULL) {
 		return false;
@@ -323,7 +378,8 @@ static bool wants_floating(struct sway_view *view) {
 		if (type == xwayland->atoms[NET_WM_WINDOW_TYPE_DIALOG] ||
 				type == xwayland->atoms[NET_WM_WINDOW_TYPE_UTILITY] ||
 				type == xwayland->atoms[NET_WM_WINDOW_TYPE_TOOLBAR] ||
-				type == xwayland->atoms[NET_WM_WINDOW_TYPE_SPLASH]) {
+				type == xwayland->atoms[NET_WM_WINDOW_TYPE_SPLASH] ||
+				type == xwayland->atoms[NET_WM_WINDOW_TYPE_NOTIFICATION]) {
 			return true;
 		}
 	}
@@ -334,6 +390,21 @@ static bool wants_floating(struct sway_view *view) {
 			(size_hints->max_width == size_hints->min_width ||
 			size_hints->max_height == size_hints->min_height)) {
 		return true;
+	}
+
+	struct sway_xwayland_view *xwayland_view = xwayland_view_from_view(view);
+	// Like i3, any WM_TRANSIENT_FOR counts, including one that points at the
+	// root window (as pinentry-gtk-2 does) and so leaves surface->parent unset.
+	if (surface->parent || xwayland_view->transient_for) {
+		return true;
+	}
+	if (xwayland_view->client_leader &&
+			xwayland_view->client_leader != surface->window_id) {
+		struct leader_search search = { .window_id = xwayland_view->client_leader };
+		root_for_each_container(find_leader_iterator, &search);
+		if (search.found) {
+			return true;
+		}
 	}
 
 	return false;
@@ -522,6 +593,8 @@ static void handle_map(struct wl_listener *listener, void *data) {
 
 	view->natural_width = xsurface->width;
 	view->natural_height = xsurface->height;
+
+	read_float_hints(xwayland_view);
 
 	// Wire up the commit listener here, because xwayland map/unmap can change
 	// the underlying wlr_surface
