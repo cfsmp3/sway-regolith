@@ -879,6 +879,10 @@ values in *sway-bar*(5):
 :  object
 :  An object representing the gaps for the bar consisting of _top_, _right_,
    _bottom_, and _left_.
+|- padding
+:  object
+:  An object representing the padding of the bar consisting of _top_, _right_,
+   _bottom_, and _left_.
 |- bar_height
 :  integer
 :  The absolute height to use for the bar or _0_ to automatically size based
@@ -958,6 +962,12 @@ containing the _#RRGGBBAA_ representation of the color:
 	"status_command": "while date +'%Y-%m-%d %l:%M:%S %p'; do sleep 1; done",
 	"font": "monospace 10",
 	"gaps": {
+		"top": 0,
+		"right": 0,
+		"bottom": 0,
+		"left": 0
+	},
+	"padding": {
 		"top": 0,
 		"right": 0,
 		"bottom": 0,

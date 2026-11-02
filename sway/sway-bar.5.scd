@@ -88,6 +88,15 @@ runtime.
 	the output command is omitted, the bar will be displayed on all outputs. _\*_
 	can be given at any point to reset it back to all outputs.
 
+*padding* <all> | <vertical> <horizontal> | <top> <horizontal> <bottom> | <top> <right> <bottom> <left>
+	Sets the padding of the bar, as in i3bar. Each value is a non-negative
+	number of pixels with an optional _px_ suffix, and the values follow the
+	CSS shorthand order. The top and bottom padding make the bar taller, and
+	the workspace buttons, the binding mode indicator and the status blocks
+	grow to fill it. The left padding moves the workspace buttons right and
+	the right padding moves the status line left. Combining _padding_ with
+	_height_ is not supported. The default is _0_.
+
 *pango_markup* enabled|disabled
 	Enables or disables pango markup for status lines. This has no effect on
 	status lines using the i3bar JSON protocol.

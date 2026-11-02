@@ -380,6 +380,7 @@ struct bar_config {
 	bool binding_mode_indicator;
 	bool verbose;
 	struct side_gaps gaps;
+	struct side_gaps padding;
 	int status_padding;
 	int status_edge_padding;
 	uint32_t workspace_min_width;

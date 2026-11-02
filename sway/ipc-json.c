@@ -1311,6 +1311,13 @@ json_object *ipc_json_describe_bar_config(struct bar_config *bar) {
 			json_object_new_int(bar->gaps.left));
 	json_object_object_add(json, "gaps", gaps);
 
+	json_object *padding = json_object_new_object();
+	json_object_object_add(padding, "top", json_object_new_int(bar->padding.top));
+	json_object_object_add(padding, "right", json_object_new_int(bar->padding.right));
+	json_object_object_add(padding, "bottom", json_object_new_int(bar->padding.bottom));
+	json_object_object_add(padding, "left", json_object_new_int(bar->padding.left));
+	json_object_object_add(json, "padding", padding);
+
 	if (bar->separator_symbol) {
 		json_object_object_add(json, "separator_symbol",
 				json_object_new_string(bar->separator_symbol));

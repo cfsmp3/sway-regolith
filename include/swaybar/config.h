@@ -56,6 +56,12 @@ struct swaybar_config {
 		int bottom;
 		int left;
 	} gaps;
+	struct {
+		int top;
+		int right;
+		int bottom;
+		int left;
+	} padding;
 
 	struct {
 		uint32_t background;

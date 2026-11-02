@@ -763,7 +763,42 @@ void render_frame(struct swaybar_output *output) {
 	cairo_set_source_u32(cairo, background_color);
 	cairo_paint(cairo);
 
+	// bar { padding }, like i3bar: the left and right padding inset the
+	// content, and the top and bottom padding make the bar taller. The
+	// buttons and blocks fill the taller bar rather than being inset, so the
+	// height is measured once without padding (a pass at height 0 only
+	// returns the ideal height) and the padding is added to it.
+	struct swaybar_config *config = output->bar->config;
+	uint32_t pad_x = config->padding.left + config->padding.right;
+	uint32_t pad_y = config->padding.top + config->padding.bottom;
+	uint32_t full_width = output->width, full_height = output->height;
+	uint32_t padded_height = 0;
+	output->width = full_width > pad_x ? full_width - pad_x : 0;
+	if (pad_y > 0) {
+		struct render_context measure = ctx;
+		cairo_surface_t *scratch = cairo_recording_surface_create(
+				CAIRO_CONTENT_COLOR_ALPHA, NULL);
+		measure.cairo = cairo_create(scratch);
+		cairo_scale(measure.cairo, output->scale, output->scale);
+		output->height = 0;
+		padded_height = render_to_cairo(&measure) + pad_y;
+		output->height = full_height;
+		free_hotspots(&output->hotspots);
+		cairo_destroy(measure.cairo);
+		cairo_surface_destroy(scratch);
+	}
+	cairo_save(cairo);
+	cairo_translate(cairo, config->padding.left, 0);
 	uint32_t height = render_to_cairo(&ctx);
+	cairo_restore(cairo);
+	output->width = full_width;
+	if (pad_y > 0) {
+		height = padded_height;
+	}
+	struct swaybar_hotspot *hotspot;
+	wl_list_for_each(hotspot, &output->hotspots, link) {
+		hotspot->x += config->padding.left;
+	}
 	int config_height = output->bar->config->height;
 	if (config_height > 0) {
 		height = config_height;

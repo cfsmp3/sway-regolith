@@ -20,6 +20,7 @@ static const struct cmd_handler bar_handlers[] = {
 	{ "mode", bar_cmd_mode },
 	{ "modifier", bar_cmd_modifier },
 	{ "output", bar_cmd_output },
+	{ "padding", bar_cmd_padding },
 	{ "pango_markup", bar_cmd_pango_markup },
 	{ "position", bar_cmd_position },
 	{ "separator_symbol", bar_cmd_separator_symbol },

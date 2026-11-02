@@ -137,6 +137,7 @@ sway_sources = files(
 	'commands/bar/mode.c',
 	'commands/bar/modifier.c',
 	'commands/bar/output.c',
+	'commands/bar/padding.c',
 	'commands/bar/pango_markup.c',
 	'commands/bar/position.c',
 	'commands/bar/separator_symbol.c',

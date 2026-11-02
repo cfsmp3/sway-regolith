@@ -214,6 +214,23 @@ static bool ipc_parse_config(
 		}
 	}
 
+	json_object *padding = json_object_object_get(bar_config, "padding");
+	if (padding) {
+		json_object *v;
+		if ((v = json_object_object_get(padding, "top"))) {
+			config->padding.top = json_object_get_int(v);
+		}
+		if ((v = json_object_object_get(padding, "right"))) {
+			config->padding.right = json_object_get_int(v);
+		}
+		if ((v = json_object_object_get(padding, "bottom"))) {
+			config->padding.bottom = json_object_get_int(v);
+		}
+		if ((v = json_object_object_get(padding, "left"))) {
+			config->padding.left = json_object_get_int(v);
+		}
+	}
+
 	json_object *pango_markup =
 		json_object_object_get(bar_config, "pango_markup");
 	if (pango_markup) {
@@ -506,7 +523,9 @@ static bool handle_barconfig_update(struct swaybar *bar, const char *payload,
 			destroy_layer_surface(output);
 			wl_list_remove(&output->link);
 			wl_list_insert(&bar->unused_outputs, &output->link);
-		} else if (!pango_font_description_equal(oldcfg->font_description, newcfg->font_description)) {
+		} else if (!pango_font_description_equal(oldcfg->font_description, newcfg->font_description) ||
+				oldcfg->padding.top + oldcfg->padding.bottom !=
+				newcfg->padding.top + newcfg->padding.bottom) {
 			output->height = 0;  // force update height
 		}
 	}
