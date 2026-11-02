@@ -899,7 +899,6 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	} else if (ws) {
 		container = workspace_add_tiling(ws, container);
 	}
-	ipc_event_window(view->container, "new");
 
 	if (decoration) {
 		view_update_csd_from_client(view, decoration);
@@ -940,6 +939,9 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	}
 
 	view_execute_criteria(view);
+	if (view->container) {
+		ipc_event_window(view->container, "new");
+	}
 
 	bool set_focus = should_focus(view);
 
