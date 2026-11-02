@@ -7,6 +7,9 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/ipc-server.h"
+#include "sway/input/input-manager.h"
+#include "sway/input/seat.h"
+#include "sway/server.h"
 #include "sway/output.h"
 #include "sway/desktop/launcher.h"
 #include "sway/tree/container.h"
@@ -93,6 +96,14 @@ struct cmd_results *cmd_rename(int argc, char **argv) {
 
 	sway_log(SWAY_DEBUG, "renaming workspace '%s' to '%s'", workspace->name, new_name);
 
+	struct sway_seat *seat;
+	wl_list_for_each(seat, &server.input->seats, link) {
+		if (seat->prev_workspace_name &&
+				strcmp(seat->prev_workspace_name, workspace->name) == 0) {
+			free(seat->prev_workspace_name);
+			seat->prev_workspace_name = strdup(new_name);
+		}
+	}
 	free(workspace->name);
 	workspace->name = new_name;
 
