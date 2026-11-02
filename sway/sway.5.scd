@@ -122,6 +122,11 @@ They are expected to be used with *bindsym* or at runtime through *swaymsg*(1).
 <criteria> *focus*
 	Moves focus to the container that matches the specified criteria.
 
+<criteria> *focus* workspace
+	Switches to the workspace that holds the container matching the specified
+	criteria. That workspace's last focused container gets focus, not the
+	matched container. Fails without criteria.
+
 *focus* up|right|down|left
 	Moves focus to the next container in the specified direction.
 

@@ -429,6 +429,20 @@ struct cmd_results *cmd_focus(int argc, char **argv) {
 		return focus_output(seat, argc, argv);
 	}
 
+	if (strcasecmp(argv[0], "workspace") == 0 && argc == 1) {
+		if (!config->handler_context.node_overridden || !container) {
+			return cmd_results_new(CMD_FAILURE,
+				"You have to specify which window/container should be focused");
+		}
+		if (!workspace || container_is_scratchpad_hidden_or_child(container)) {
+			return cmd_results_new(CMD_FAILURE,
+				"The container is not on a workspace");
+		}
+		workspace_switch(workspace);
+		seat_consider_warp_to_focus(seat);
+		return cmd_results_new(CMD_SUCCESS, NULL);
+	}
+
 	if (strcasecmp(argv[0], "parent") == 0) {
 		return focus_parent();
 	}
