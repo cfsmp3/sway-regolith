@@ -48,9 +48,14 @@ static enum sway_container_layout get_layout_toggle(int argc, char **argv,
 		enum sway_container_layout layout,
 		enum sway_container_layout prev_split_layout,
 		struct sway_output *output) {
-	// "layout toggle"
+	// "layout toggle": stacking -> tabbed -> last split layout -> stacking
 	if (argc == 1) {
-		return toggle_split_layout(layout, prev_split_layout, output);
+		if (layout == L_STACKED) {
+			return L_TABBED;
+		} else if (layout == L_TABBED) {
+			return prev_split_layout != L_NONE ? prev_split_layout : L_HORIZ;
+		}
+		return L_STACKED;
 	}
 
 	if (argc == 2) {
