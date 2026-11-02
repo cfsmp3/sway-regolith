@@ -28,6 +28,7 @@ bool criteria_is_empty(struct criteria *criteria) {
 		&& !criteria->id
 		&& !criteria->instance
 		&& !criteria->window_role
+		&& !criteria->machine
 		&& criteria->window_type == ATOM_LAST
 #endif
 		&& !criteria->floating
@@ -99,6 +100,7 @@ void criteria_destroy(struct criteria *criteria) {
 	pattern_destroy(criteria->class);
 	pattern_destroy(criteria->instance);
 	pattern_destroy(criteria->window_role);
+	pattern_destroy(criteria->machine);
 #endif
 	pattern_destroy(criteria->con_mark);
 	pattern_destroy(criteria->workspace);
@@ -412,6 +414,31 @@ static bool criteria_matches_view(struct criteria *criteria,
 		}
 	}
 
+	if (criteria->machine) {
+		const char *machine = view_get_machine(view);
+		if (!machine) {
+			machine = "";
+		}
+
+		switch (criteria->machine->match_type) {
+		case PATTERN_FOCUSED:;
+			// A window without a machine compares as an empty string, on
+			// both sides.
+			const char *focused_machine =
+				focused ? view_get_machine(focused) : NULL;
+			if (focused && strcmp(machine,
+					focused_machine ? focused_machine : "") != 0) {
+				return false;
+			}
+			break;
+		case PATTERN_PCRE2:
+			if (regex_cmp(machine, criteria->machine->regex) < 0) {
+				return false;
+			}
+			break;
+		}
+	}
+
 	if (criteria->window_type != ATOM_LAST) {
 		if (!view_has_window_type(view, criteria->window_type)) {
 			return false;
@@ -559,6 +586,7 @@ enum criteria_token {
 	T_ID,
 	T_INSTANCE,
 	T_WINDOW_ROLE,
+	T_MACHINE,
 	T_WINDOW_TYPE,
 #endif
 	T_SHELL,
@@ -593,6 +621,8 @@ static enum criteria_token token_from_name(char *name) {
 		return T_INSTANCE;
 	} else if (strcmp(name, "window_role") == 0) {
 		return T_WINDOW_ROLE;
+	} else if (strcmp(name, "machine") == 0) {
+		return T_MACHINE;
 	} else if (strcmp(name, "window_type") == 0) {
 		return T_WINDOW_TYPE;
 #endif
@@ -685,6 +715,9 @@ static bool parse_token(struct criteria *criteria, char *name, char *value) {
 		break;
 	case T_WINDOW_ROLE:
 		pattern_create(&criteria->window_role, value);
+		break;
+	case T_MACHINE:
+		pattern_create(&criteria->machine, value);
 		break;
 	case T_WINDOW_TYPE:
 		criteria->window_type = parse_window_type(value);

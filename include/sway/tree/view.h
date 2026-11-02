@@ -30,6 +30,7 @@ enum sway_view_prop {
 	VIEW_PROP_INSTANCE,
 	VIEW_PROP_WINDOW_TYPE,
 	VIEW_PROP_WINDOW_ROLE,
+	VIEW_PROP_MACHINE,
 #if WLR_HAS_XWAYLAND
 	VIEW_PROP_X11_WINDOW_ID,
 	VIEW_PROP_X11_PARENT_ID,
@@ -150,6 +151,8 @@ struct sway_xdg_shell_view {
 struct sway_xwayland_view {
 	struct sway_view view;
 
+	char *machine; // WM_CLIENT_MACHINE, read when the window maps
+
 	struct wlr_scene_tree *surface_tree;
 
 	struct wlr_scene_surface *image_capture_scene_surface;
@@ -232,6 +235,8 @@ uint32_t view_get_x11_window_id(struct sway_view *view);
 uint32_t view_get_x11_parent_id(struct sway_view *view);
 
 const char *view_get_window_role(struct sway_view *view);
+
+const char *view_get_machine(struct sway_view *view);
 
 uint32_t view_get_window_type(struct sway_view *view);
 

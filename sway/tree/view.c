@@ -196,6 +196,13 @@ uint32_t view_get_x11_parent_id(struct sway_view *view) {
 	return 0;
 }
 #endif
+const char *view_get_machine(struct sway_view *view) {
+	if (view->impl->get_string_prop) {
+		return view->impl->get_string_prop(view, VIEW_PROP_MACHINE);
+	}
+	return NULL;
+}
+
 const char *view_get_window_role(struct sway_view *view) {
 	if (view->impl->get_string_prop) {
 		return view->impl->get_string_prop(view, VIEW_PROP_WINDOW_ROLE);

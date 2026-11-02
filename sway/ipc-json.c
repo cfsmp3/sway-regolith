@@ -691,6 +691,11 @@ static void ipc_json_describe_view(struct sway_container *c, json_object *object
 		json_object_object_add(window_props, "transient_for",
 				parent_id ? json_object_new_int(parent_id) : NULL);
 
+		const char *machine = view_get_machine(c->view);
+		if (machine) {
+			json_object_object_add(window_props, "machine", json_object_new_string(machine));
+		}
+
 		const char *role = view_get_window_role(c->view);
 		if (role) {
 			json_object_object_add(window_props, "window_role", json_object_new_string(role));

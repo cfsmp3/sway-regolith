@@ -394,6 +394,10 @@ set|plus|minus|toggle <amount>
 	*%instance*
 		The X11 instance (applicable to xwayland windows only)
 
+	*%machine*
+		The X11 client machine, WM_CLIENT_MACHINE (applicable to xwayland
+		windows only; empty when unset)
+
 	*%shell*
 		The protocol the window is using (typically xwayland or xdg_shell)
 
@@ -1053,6 +1057,14 @@ The following attributes may be matched with:
 	value is \_\_focused\_\_, then the window instance must be the same as that
 	of the currently focused window. instance is specific to X11 applications and
 	requires XWayland.
+
+*machine*
+	Compare value against the client machine of the window
+	(WM_CLIENT_MACHINE), as set when the window appears. Can be a regular
+	expression. If value is \_\_focused\_\_, then the machine must be the same
+	as that of the currently focused window. Windows without a machine,
+	including Wayland windows, compare as an empty string. machine requires
+	XWayland.
 
 *pid*
 	Compare value against the window's process ID. Must be numeric.

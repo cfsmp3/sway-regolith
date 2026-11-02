@@ -681,6 +681,9 @@ size_t parse_title_format(struct sway_container *container, char *buffer) {
 			} else if (has_prefix(next, "%instance")) {
 				len += append_prop(buffer, view_get_instance(container->view));
 				format += strlen("%instance");
+			} else if (has_prefix(next, "%machine")) {
+				len += append_prop(buffer, view_get_machine(container->view));
+				format += strlen("%machine");
 			} else if (has_prefix(next, "%shell")) {
 				len += append_prop(buffer, view_get_shell(container->view));
 				format += strlen("%shell");

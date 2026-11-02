@@ -45,6 +45,7 @@ struct criteria {
 	uint32_t id; // X11 window ID
 	struct pattern *instance;
 	struct pattern *window_role;
+	struct pattern *machine;
 	enum atom_name window_type;
 #endif
 	bool all;

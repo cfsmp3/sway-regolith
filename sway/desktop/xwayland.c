@@ -1,6 +1,7 @@
 #include <float.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_output.h>
@@ -237,6 +238,8 @@ static const char *get_string_prop(struct sway_view *view, enum sway_view_prop p
 		return view->wlr_xwayland_surface->instance;
 	case VIEW_PROP_WINDOW_ROLE:
 		return view->wlr_xwayland_surface->role;
+	case VIEW_PROP_MACHINE:
+		return xwayland_view_from_view(view)->machine;
 	default:
 		return NULL;
 	}
@@ -376,6 +379,7 @@ static void destroy(struct sway_view *view) {
 	if (xwayland_view == NULL) {
 		return;
 	}
+	free(xwayland_view->machine);
 	free(xwayland_view);
 }
 
@@ -514,11 +518,36 @@ static void handle_surface_tree_destroy(struct wl_listener *listener, void *data
 	xwayland_view->surface_tree = NULL;
 }
 
+static void read_client_machine(struct sway_xwayland_view *xwayland_view) {
+	struct wlr_xwayland_surface *xsurface = xwayland_view->view.wlr_xwayland_surface;
+	free(xwayland_view->machine);
+	xwayland_view->machine = NULL;
+	xcb_connection_t *xcb = server.xwayland.wlr_xwayland ?
+		wlr_xwayland_get_xwm_connection(server.xwayland.wlr_xwayland) : NULL;
+	if (!xcb) {
+		return;
+	}
+	xcb_get_property_cookie_t cookie = xcb_get_property(xcb, 0,
+		xsurface->window_id, XCB_ATOM_WM_CLIENT_MACHINE, XCB_GET_PROPERTY_TYPE_ANY,
+		0, 1024);
+	xcb_get_property_reply_t *reply = xcb_get_property_reply(xcb, cookie, NULL);
+	if (!reply) {
+		return;
+	}
+	int len = xcb_get_property_value_length(reply);
+	if (reply->format == 8 && len > 0) {
+		xwayland_view->machine = strndup(xcb_get_property_value(reply), len);
+	}
+	free(reply);
+}
+
 static void handle_map(struct wl_listener *listener, void *data) {
 	struct sway_xwayland_view *xwayland_view =
 		wl_container_of(listener, xwayland_view, map);
 	struct sway_view *view = &xwayland_view->view;
 	struct wlr_xwayland_surface *xsurface = view->wlr_xwayland_surface;
+
+	read_client_machine(xwayland_view);
 
 	view->natural_width = xsurface->width;
 	view->natural_height = xsurface->height;

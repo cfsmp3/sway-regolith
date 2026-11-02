@@ -429,7 +429,8 @@ node and will have the following properties:
 |- window_properties
 :  object
 :  (Only xwayland windows) An object containing the _title_, _class_, _instance_,
-   _window\_role_, _window\_type_, and _transient\_for_ for the window
+   _window\_role_, _window\_type_, and _transient\_for_ for the window, and
+   _machine_ when the window sets one
 
 
 *Example Reply:*
