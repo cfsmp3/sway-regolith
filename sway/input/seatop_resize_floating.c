@@ -37,6 +37,9 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	struct sway_container *con = e->con;
 	enum wlr_edges edge = e->edge;
 	struct sway_cursor *cursor = seat->cursor;
+	if (con->scratchpad) {
+		con->scratchpad_changed = true;
+	}
 
 	// The amount the mouse has moved since the start of the resize operation
 	// Positive is down/right

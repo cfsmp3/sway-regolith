@@ -132,6 +132,8 @@ struct sway_container {
 	// Both hidden and visible scratchpad containers have scratchpad=true.
 	// Hidden scratchpad containers have a NULL parent.
 	bool scratchpad;
+	// i3 compat: scratchpad container moved/resized by the user while in scratchpad
+	bool scratchpad_changed;
 
 	// Stores last output size and position for adjusting coordinates of
 	// scratchpad windows.

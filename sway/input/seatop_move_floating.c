@@ -37,6 +37,9 @@ static void handle_tablet_tool_tip(struct sway_seat *seat,
 static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	struct seatop_move_floating_event *e = seat->seatop_data;
 	struct wlr_cursor *cursor = seat->cursor->cursor;
+	if (e->con->scratchpad) {
+		e->con->scratchpad_changed = true;
+	}
 	container_floating_move_to(e->con, cursor->x - e->dx, cursor->y - e->dy);
 	transaction_commit_dirty();
 }

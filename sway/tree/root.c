@@ -116,6 +116,9 @@ void root_scratchpad_add_container(struct sway_container *con, struct sway_works
 		container_set_floating(con, true);
 		container_floating_set_default_size(con);
 		container_floating_move_to_center(con);
+	} else {
+		// i3 compat: an already floating window keeps its geometry
+		con->scratchpad_changed = true;
 	}
 
 	container_detach(con);
@@ -147,6 +150,7 @@ void root_scratchpad_remove_container(struct sway_container *con) {
 		return;
 	}
 	con->scratchpad = false;
+	con->scratchpad_changed = false;
 	int index = list_find(root->scratchpad, con);
 	if (index != -1) {
 		list_del(root->scratchpad, index);

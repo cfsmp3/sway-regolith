@@ -180,6 +180,9 @@ cleanup:
 static struct cmd_results *resize_adjust_floating(uint32_t axis,
 		struct movement_amount *amount) {
 	struct sway_container *con = config->handler_context.container;
+	if (con->scratchpad) {
+		con->scratchpad_changed = true;
+	}
 	int grow_width = 0, grow_height = 0;
 
 	if (is_horizontal(axis)) {
@@ -340,6 +343,9 @@ static struct cmd_results *resize_set_tiled(struct sway_container *con,
  */
 static struct cmd_results *resize_set_floating(struct sway_container *con,
 		struct movement_amount *width, struct movement_amount *height) {
+	if (con->scratchpad) {
+		con->scratchpad_changed = true;
+	}
 	int min_width, max_width, min_height, max_height, grow_width = 0, grow_height = 0;
 	floating_calculate_constraints(&min_width, &max_width,
 			&min_height, &max_height);

@@ -706,6 +706,9 @@ static struct cmd_results *cmd_move_in_direction(
 			ly += move_amt;
 			break;
 		}
+		if (container->scratchpad) {
+			container->scratchpad_changed = true;
+		}
 		container_floating_move_to(container, lx, ly);
 		return cmd_results_new(CMD_SUCCESS, NULL);
 	}
@@ -772,6 +775,9 @@ static struct cmd_results *cmd_move_to_position_pointer(
 	}
 
 	/* Actually move the container. */
+	if (container->scratchpad) {
+		container->scratchpad_changed = true;
+	}
 	container_floating_move_to(container, lx, ly);
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
@@ -827,6 +833,9 @@ static struct cmd_results *cmd_move_to_position(int argc, char **argv) {
 			}
 			lx = ws->x + (ws->width - container->pending.width) / 2;
 			ly = ws->y + (ws->height - container->pending.height) / 2;
+		}
+		if (container->scratchpad) {
+			container->scratchpad_changed = true;
 		}
 		container_floating_move_to(container, lx, ly);
 		return cmd_results_new(CMD_SUCCESS, NULL);
@@ -913,6 +922,9 @@ static struct cmd_results *cmd_move_to_position(int argc, char **argv) {
 	if (!absolute) {
 		lx.amount += ws->x;
 		ly.amount += ws->y;
+	}
+	if (container->scratchpad) {
+		container->scratchpad_changed = true;
 	}
 	container_floating_move_to(container, lx.amount, ly.amount);
 	return cmd_results_new(CMD_SUCCESS, NULL);
