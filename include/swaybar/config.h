@@ -32,6 +32,7 @@ struct swaybar_binding {
 
 struct swaybar_config {
 	char *status_command;
+	char *workspace_command;
 	bool pango_markup;
 	uint32_t position; // zwlr_layer_surface_v1_anchor
 	PangoFontDescription *font_description;

@@ -17,6 +17,7 @@
 #include "loop.h"
 #include "stringop.h"
 #include "util.h"
+#include "swaybar/workspace_command.h"
 
 // Quotes a workspace name for sway's command parser, which removes quotes but
 // keeps backslashes: runs of characters go in single quotes, and each single
@@ -301,6 +302,12 @@ static bool ipc_parse_config(
 		config->workspace_buttons = json_object_get_boolean(workspace_buttons);
 	}
 
+	json_object *workspace_command =
+		json_object_object_get(bar_config, "workspace_command");
+	free(config->workspace_command);
+	config->workspace_command = workspace_command ?
+		strdup(json_object_get_string(workspace_command)) : NULL;
+
 	json_object *workspace_min_width =
 		json_object_object_get(bar_config, "workspace_min_width");
 	if (workspace_min_width) {
@@ -372,69 +379,115 @@ bool ipc_get_workspaces(struct swaybar *bar) {
 		free_workspaces(&output->workspaces);
 		output->focused = false;
 	}
-	uint32_t len = 0;
-	char *res = ipc_single_command(bar->ipc_socketfd,
-			IPC_GET_WORKSPACES, NULL, &len);
-	json_object *results = json_tokener_parse(res);
-	if (!results) {
-		free(res);
-		return false;
+	char *res = NULL;
+	json_object *results = NULL;
+	// With a workspace_command, its last printed array replaces the
+	// compositor's workspace list (i3bar workspace buttons protocol).
+	bool from_command = bar->workspace_command != NULL;
+	if (from_command) {
+		if (!bar->workspace_command->workspaces) {
+			bar->visible_by_urgency = false;
+			return determine_bar_visibility(bar, false);
+		}
+		results = json_object_get(bar->workspace_command->workspaces);
+	} else {
+		uint32_t len = 0;
+		res = ipc_single_command(bar->ipc_socketfd,
+				IPC_GET_WORKSPACES, NULL, &len);
+		results = json_tokener_parse(res);
+		if (!results) {
+			free(res);
+			return false;
+		}
 	}
 
 	bar->visible_by_urgency = false;
 	size_t length = json_object_array_length(results);
-	json_object *ws_json;
-	json_object *num, *name, *visible, *focused, *out, *urgent;
 	for (size_t i = 0; i < length; ++i) {
-		ws_json = json_object_array_get_idx(results, i);
-
+		json_object *ws_json = json_object_array_get_idx(results, i);
+		json_object *num = NULL, *name = NULL, *visible = NULL, *focused = NULL,
+			*out = NULL, *urgent = NULL, *id = NULL;
 		json_object_object_get_ex(ws_json, "num", &num);
 		json_object_object_get_ex(ws_json, "name", &name);
 		json_object_object_get_ex(ws_json, "visible", &visible);
 		json_object_object_get_ex(ws_json, "focused", &focused);
 		json_object_object_get_ex(ws_json, "output", &out);
 		json_object_object_get_ex(ws_json, "urgent", &urgent);
+		json_object_object_get_ex(ws_json, "id", &id);
+		if (!name || !json_object_is_type(name, json_type_string)) {
+			continue;
+		}
 
 		wl_list_for_each(output, &bar->outputs, link) {
-			const char *ws_output = json_object_get_string(out);
-			if (ws_output != NULL && strcmp(ws_output, output->name) == 0) {
-				struct swaybar_workspace *ws =
-					calloc(1, sizeof(struct swaybar_workspace));
-				ws->num = json_object_get_int(num);
-				ws->name = strdup(json_object_get_string(name));
-				ws->label = strdup(ws->name);
-				// ws->num will be -1 if workspace name doesn't begin with int.
-				if (ws->num != -1) {
-					size_t len_offset = snprintf(NULL, 0, "%d", ws->num);
-					if (bar->config->strip_workspace_name) {
+			const char *ws_output = out ? json_object_get_string(out) : NULL;
+			bool on_output = ws_output ? strcmp(ws_output, output->name) == 0
+				: from_command;
+			if (!on_output) {
+				continue;
+			}
+			struct swaybar_workspace *ws =
+				calloc(1, sizeof(struct swaybar_workspace));
+			ws->num = num ? json_object_get_int(num) : -1;
+			ws->name = strdup(json_object_get_string(name));
+			ws->label = strdup(ws->name);
+			if (from_command && id) {
+				ws->has_id = true;
+				ws->id = json_object_get_int64(id);
+			}
+			// ws->num will be -1 if workspace name doesn't begin with int.
+			if (ws->num != -1) {
+				size_t len_offset = snprintf(NULL, 0, "%d", ws->num);
+				if (bar->config->strip_workspace_name) {
+					free(ws->label);
+					ws->label = malloc(len_offset + 1);
+					snprintf(ws->label, len_offset + 1, "%d", ws->num);
+				} else if (bar->config->strip_workspace_numbers) {
+					len_offset += ws->label[len_offset] == ':';
+					if (ws->name[len_offset] != '\0') {
 						free(ws->label);
-						ws->label = malloc(len_offset + 1);
-						snprintf(ws->label, len_offset + 1, "%d", ws->num);
-					} else if (bar->config->strip_workspace_numbers) {
-						len_offset += ws->label[len_offset] == ':';
-						if (ws->name[len_offset] != '\0') {
-							free(ws->label);
-							// Strip number prefix [1-?:] using len_offset.
-							ws->label = strdup(ws->name + len_offset);
-						}
+						// Strip number prefix [1-?:] using len_offset.
+						ws->label = strdup(ws->name + len_offset);
 					}
 				}
-				ws->visible = json_object_get_boolean(visible);
-				ws->focused = json_object_get_boolean(focused);
-				if (ws->focused) {
-					output->focused = true;
-				}
-				ws->urgent = json_object_get_boolean(urgent);
-				if (ws->urgent) {
-					bar->visible_by_urgency = true;
-				}
-				wl_list_insert(output->workspaces.prev, &ws->link);
 			}
+			ws->visible = visible && json_object_get_boolean(visible);
+			ws->focused = focused && json_object_get_boolean(focused);
+			if (ws->focused) {
+				output->focused = true;
+			}
+			ws->urgent = urgent && json_object_get_boolean(urgent);
+			if (ws->urgent) {
+				bar->visible_by_urgency = true;
+			}
+			wl_list_insert(output->workspaces.prev, &ws->link);
 		}
 	}
 	json_object_put(results);
 	free(res);
 	return determine_bar_visibility(bar, false);
+}
+
+void ipc_send_workspace_id_command(struct swaybar *bar, long long id) {
+	uint32_t len = 0;
+	char *res = ipc_single_command(bar->ipc_socketfd,
+			IPC_GET_WORKSPACES, NULL, &len);
+	json_object *results = json_tokener_parse(res);
+	free(res);
+	if (!results) {
+		return;
+	}
+	size_t length = json_object_array_length(results);
+	for (size_t i = 0; i < length; ++i) {
+		json_object *ws_json = json_object_array_get_idx(results, i);
+		json_object *ws_id = NULL, *name = NULL;
+		json_object_object_get_ex(ws_json, "id", &ws_id);
+		json_object_object_get_ex(ws_json, "name", &name);
+		if (ws_id && name && json_object_get_int64(ws_id) == id) {
+			ipc_send_workspace_command(bar, json_object_get_string(name));
+			break;
+		}
+	}
+	json_object_put(results);
 }
 
 void ipc_execute_binding(struct swaybar *bar, struct swaybar_binding *bind) {
@@ -565,6 +618,19 @@ static bool handle_barconfig_update(struct swaybar *bar, const char *payload,
 		bar->status->bar = bar;
 		loop_add_fd(bar->eventloop, bar->status->read_fd, POLLIN,
 				status_in, bar);
+	}
+
+	if (bar->workspace_command && (!newcfg->workspace_command ||
+			strcmp(newcfg->workspace_command, bar->workspace_command->cmd) != 0)) {
+		workspace_command_free(bar->workspace_command);
+		bar->workspace_command = NULL;
+	}
+	if (!bar->workspace_command && newcfg->workspace_command) {
+		bar->workspace_command = workspace_command_init(bar, newcfg->workspace_command);
+		if (bar->workspace_command) {
+			loop_add_fd(bar->eventloop, bar->workspace_command->read_fd, POLLIN,
+					workspace_command_in, bar);
+		}
 	}
 
 #if HAVE_TRAY

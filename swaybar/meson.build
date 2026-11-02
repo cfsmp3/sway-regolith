@@ -32,6 +32,7 @@ executable(
 		'main.c',
 		'render.c',
 		'status_line.c',
+		'workspace_command.c',
 		tray_files,
 		wl_protos_src,
 	],

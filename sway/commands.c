@@ -202,6 +202,21 @@ static void set_config_node(struct sway_node *node, bool node_overridden) {
 	}
 }
 
+// Index of the first argument of `bar [<bar-id>] workspace_command <command>`,
+// or argc. Like i3, the command is handed to the shell as written, so its
+// quotes and escapes are kept.
+static int bar_shell_command_start(int argc, char **argv) {
+	if (argc < 2 || strcmp(argv[0], "bar") != 0) {
+		return argc;
+	}
+	for (int i = 1; i < argc && i <= 2; ++i) {
+		if (strcmp(argv[i], "workspace_command") == 0) {
+			return i + 1;
+		}
+	}
+	return argc;
+}
+
 list_t *execute_command(char *_exec, struct sway_seat *seat,
 		struct sway_container *con) {
 	char *cmd;
@@ -265,7 +280,8 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 		if (strcmp(argv[0], "exec") != 0 &&
 				strcmp(argv[0], "exec_always") != 0 &&
 				strcmp(argv[0], "mode") != 0) {
-			for (int i = 1; i < argc; ++i) {
+			int verbatim = bar_shell_command_start(argc, argv);
+			for (int i = 1; i < verbatim; ++i) {
 				if (*argv[i] == '\"' || *argv[i] == '\'') {
 					strip_quotes(argv[i]);
 				}
@@ -407,7 +423,8 @@ struct cmd_results *config_command(char *exec, char **new_block) {
 	free(command);
 
 	// Strip quotes and unescape the string
-	for (int i = handler->handle == cmd_set ? 2 : 1; i < argc; ++i) {
+	int verbatim = bar_shell_command_start(argc, argv);
+	for (int i = handler->handle == cmd_set ? 2 : 1; i < verbatim; ++i) {
 		if (handler->handle != cmd_exec && handler->handle != cmd_exec_always
 				&& handler->handle != cmd_mode
 				&& handler->handle != cmd_bindsym

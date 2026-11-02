@@ -856,6 +856,10 @@ values in *sway-bar*(5):
 |- status_command
 :  string
 :  The command which should be run to generate the status line
+|- workspace_command
+:  string
+:  The command which should be run to generate the workspace buttons. Only
+   present when one is set
 |- font
 :  string
 :  The font to use for the text on the bar

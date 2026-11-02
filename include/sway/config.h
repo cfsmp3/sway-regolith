@@ -369,6 +369,7 @@ struct bar_config {
 	char *position;
 	list_t *bindings;
 	char *status_command;
+	char *workspace_command;
 	enum pango_markup_config pango_markup;
 	char *font;
 	int height; // -1 not defined

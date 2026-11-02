@@ -610,6 +610,18 @@ static uint32_t render_binding_mode_indicator(struct render_context *ctx,
 	return size.height;
 }
 
+struct workspace_hotspot {
+	char *name;
+	bool has_id;
+	long long id;
+};
+
+static void workspace_hotspot_destroy(void *data) {
+	struct workspace_hotspot *ws = data;
+	free(ws->name);
+	free(ws);
+}
+
 static enum hotspot_event_handling workspace_hotspot_callback(
 		struct swaybar_output *output, struct swaybar_hotspot *hotspot,
 		double x, double y, uint32_t button, bool released, void *data) {
@@ -621,7 +633,12 @@ static enum hotspot_event_handling workspace_hotspot_callback(
 		// to block it from falling through to a binding in the bar
 		return HOTSPOT_IGNORE;
 	}
-	ipc_send_workspace_command(output->bar, (const char *)data);
+	struct workspace_hotspot *ws = data;
+	if (ws->has_id) {
+		ipc_send_workspace_id_command(output->bar, ws->id);
+	} else {
+		ipc_send_workspace_command(output->bar, ws->name);
+	}
 	return HOTSPOT_IGNORE;
 }
 
@@ -633,7 +650,8 @@ static uint32_t render_workspace_button(struct render_context *ctx,
 	struct box_colors box_colors;
 	if (ws->urgent) {
 		box_colors = config->colors.urgent_workspace;
-	} else if (ws->focused) {
+	} else if (ws->focused && ws->visible) {
+		// As in i3bar, focused takes effect only on a visible workspace
 		box_colors = config->colors.focused_workspace;
 	} else if (ws->visible) {
 		box_colors = config->colors.active_workspace;
@@ -650,8 +668,12 @@ static uint32_t render_workspace_button(struct render_context *ctx,
 	hotspot->width = size.width;
 	hotspot->height = size.height;
 	hotspot->callback = workspace_hotspot_callback;
-	hotspot->destroy = free;
-	hotspot->data = strdup(ws->name);
+	hotspot->destroy = workspace_hotspot_destroy;
+	struct workspace_hotspot *data = calloc(1, sizeof(*data));
+	data->name = strdup(ws->name);
+	data->has_id = ws->has_id;
+	data->id = ws->id;
+	hotspot->data = data;
 	wl_list_insert(&output->hotspots, &hotspot->link);
 
 	*x += size.width;

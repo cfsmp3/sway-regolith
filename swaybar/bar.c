@@ -17,6 +17,7 @@
 #include "swaybar/input.h"
 #include "swaybar/ipc.h"
 #include "swaybar/status_line.h"
+#include "swaybar/workspace_command.h"
 #include "swaybar/render.h"
 #if HAVE_TRAY
 #include "swaybar/tray/tray.h"
@@ -445,6 +446,11 @@ bool bar_setup(struct swaybar *bar, const char *socket_path) {
 		bar->status->bar = bar;
 	}
 
+	if (bar->config->workspace_command) {
+		bar->workspace_command =
+			workspace_command_init(bar, bar->config->workspace_command);
+	}
+
 #if HAVE_TRAY
 	if (!bar->config->tray_hidden) {
 		bar->tray = create_tray(bar);
@@ -506,6 +512,10 @@ void bar_run(struct swaybar *bar) {
 		loop_add_fd(bar->eventloop, bar->status->read_fd, POLLIN,
 				status_in, bar);
 	}
+	if (bar->workspace_command) {
+		loop_add_fd(bar->eventloop, bar->workspace_command->read_fd, POLLIN,
+				workspace_command_in, bar);
+	}
 #if HAVE_TRAY
 	if (bar->tray) {
 		loop_add_fd(bar->eventloop, bar->tray->fd, POLLIN, tray_in, bar);
@@ -549,6 +559,7 @@ void bar_teardown(struct swaybar *bar) {
 	if (bar->status) {
 		status_line_free(bar->status);
 	}
+	workspace_command_free(bar->workspace_command);
 	free(bar->id);
 	free(bar->mode);
 }

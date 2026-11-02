@@ -138,6 +138,26 @@ runtime.
 *workspace_buttons* yes|no
 	Enables or disables workspace buttons on the bar. Default is _yes_.
 
+*workspace_command* <command>
+	Executes _command_ with _sh -c_ and shows its workspace buttons instead of
+	the real workspaces, as in i3bar. Each line printed to stdout must be a JSON
+	array in the format of the _GET\_WORKSPACES_ IPC reply (see *sway-ipc*(7))
+	and replaces the buttons. One button is shown per element, in order,
+	labelled with its _name_. Its colors follow _focused_, _visible_ and
+	_urgent_, which are false when absent: _focused\_workspace_ needs both
+	_focused_ and _visible_, _active\_workspace_ needs _visible_,
+	_urgent\_workspace_ wins over both, and anything else is
+	_inactive\_workspace_. An element with an _output_ is shown on that output
+	only; one without is shown on every output. Clicking a button with an _id_
+	switches to the workspace with that id, and clicking one without switches
+	to the workspace named _name_, creating it if needed. The real workspaces
+	are not changed. The command is passed to the shell as written, including
+	its quotes.
+
+	If running this command via IPC, you can stop a running workspace command
+	by setting the command to a single dash: _swaymsg bar bar-0
+	workspace\_command -_
+
 *workspace_min_width* <px> [px]
 	Specifies the minimum width for the workspace buttons on the bar. Default is _0_.
 

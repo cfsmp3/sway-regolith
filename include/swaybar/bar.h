@@ -36,6 +36,7 @@ struct swaybar {
 
 	struct swaybar_config *config;
 	struct status_line *status;
+	struct workspace_command *workspace_command;
 
 	struct loop *eventloop;
 
@@ -82,6 +83,8 @@ struct swaybar_output {
 
 struct swaybar_workspace {
 	struct wl_list link; // swaybar_output::workspaces
+	bool has_id; // set by a workspace_command: switch by id, not by name
+	long long id;
 	int num;
 	char *name;
 	char *label;

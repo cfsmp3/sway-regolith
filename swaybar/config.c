@@ -104,6 +104,7 @@ void free_tray_binding(struct tray_binding *binding) {
 
 void free_config(struct swaybar_config *config) {
 	free(config->status_command);
+	free(config->workspace_command);
 	pango_font_description_free(config->font_description);
 	free(config->mode);
 	free(config->hidden_state);

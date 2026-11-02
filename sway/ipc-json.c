@@ -1297,6 +1297,10 @@ json_object *ipc_json_describe_bar_config(struct bar_config *bar) {
 			json_object_new_string(bar->position));
 	json_object_object_add(json, "status_command", bar->status_command ?
 			json_object_new_string(bar->status_command) : NULL);
+	if (bar->workspace_command) {
+		json_object_object_add(json, "workspace_command",
+				json_object_new_string(bar->workspace_command));
+	}
 	json_object_object_add(json, "font",
 			json_object_new_string((bar->font) ? bar->font : config->font));
 
