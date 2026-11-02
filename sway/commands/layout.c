@@ -104,7 +104,10 @@ static enum sway_container_layout get_layout(int argc, char **argv,
 	}
 
 	if (strcasecmp(argv[0], "default") == 0) {
-		return prev_split_layout;
+		if (layout == L_HORIZ || layout == L_VERT) {
+			return layout;
+		}
+		return prev_split_layout != L_NONE ? prev_split_layout : L_HORIZ;
 	}
 
 	if (strcasecmp(argv[0], "toggle") == 0) {
@@ -179,6 +182,11 @@ struct cmd_results *cmd_layout(int argc, char **argv) {
 			// i3 avoids changing workspace layouts with a new container
 			// https://github.com/i3/i3/blob/3cd1c45eba6de073bc4300eebb4e1cc1a0c4479a/src/con.c#L1817
 			container = workspace_wrap_children(workspace);
+			if (old_layout == L_HORIZ || old_layout == L_VERT) {
+				container->prev_split_layout = old_layout;
+			} else {
+				container->prev_split_layout = workspace->prev_split_layout;
+			}
 			container->pending.layout = new_layout;
 			container_update_representation(container);
 		} else {

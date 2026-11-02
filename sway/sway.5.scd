@@ -176,7 +176,8 @@ set|plus|minus|toggle <amount>
 	existing window or with _for_window_ to set idle inhibitors for future windows.
 
 *layout* default|splith|splitv|stacking|tabbed
-	Sets the layout mode of the focused container.
+	Sets the layout mode of the focused container. _default_ returns the
+	container to its last split layout, or splith if it has none.
 
 	When using the _stacking_ layout, only the focused window in the container is
 	displayed, with the opened windows' list on the top of the container.
