@@ -1770,8 +1770,9 @@ following properties:
    other cases, this will be _0_.
 |- symbol
 :  string
-:  For keyboard bindsyms, this is the bindsym for the binding. Otherwise, this
-   will be _null_
+:  For keyboard bindsyms, this is the bindsym for the binding. For mouse
+   bindings, this is _buttonN_, where N is the X11 button number, if there is
+   an equivalent. Otherwise, this will be _null_
 |- input_type
 :  string
 :  The input type that triggered the binding. This is either _keyboard_ or

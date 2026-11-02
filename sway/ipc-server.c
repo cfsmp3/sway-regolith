@@ -19,6 +19,7 @@
 #include "sway/desktop/transaction.h"
 #include "sway/ipc-json.h"
 #include "sway/ipc-server.h"
+#include "sway/input/cursor.h"
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/input/input-manager.h"
@@ -377,6 +378,19 @@ void ipc_event_mode(const char *mode, bool pango) {
 	json_object_put(obj);
 }
 
+// X11 button number of a mouse binding key, as i3 reports it (0 if none).
+static int mouse_x11_button(uint32_t key) {
+	static const uint32_t buttons[] = {BTN_LEFT, BTN_MIDDLE, BTN_RIGHT,
+		SWAY_SCROLL_UP, SWAY_SCROLL_DOWN, SWAY_SCROLL_LEFT,
+		SWAY_SCROLL_RIGHT, BTN_SIDE, BTN_EXTRA};
+	for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
+		if (buttons[i] == key) {
+			return i + 1;
+		}
+	}
+	return 0;
+}
+
 void ipc_event_shutdown(const char *reason) {
 	if (!ipc_has_event_listeners(IPC_EVENT_SHUTDOWN)) {
 		return;
@@ -446,6 +460,21 @@ void ipc_event_binding(struct sway_binding *binding) {
 				symbol = str;
 			} else {
 				json_object_array_add(symbols, str);
+			}
+		}
+
+		// Like i3, the scalar symbol and input_code of a mouse binding
+		// carry the X11 button number. The symbols array is left as is.
+		if ((binding->type == BINDING_MOUSESYM ||
+				binding->type == BINDING_MOUSECODE) &&
+				binding->keys->length > 0) {
+			int x11_button =
+				mouse_x11_button(*(uint32_t *)binding->keys->items[0]);
+			if (x11_button) {
+				snprintf(buffer, 64, "button%d", x11_button);
+				json_object_put(symbol);
+				symbol = json_object_new_string(buffer);
+				input_code = x11_button;
 			}
 		}
 		break;
