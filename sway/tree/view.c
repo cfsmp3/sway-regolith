@@ -914,6 +914,9 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		view->container->pending.border_thickness = config->border_thickness;
 		view_set_tiled(view, true);
 	}
+	if (view->impl->wants_sticky && view->impl->wants_sticky(view)) {
+		view->container->is_sticky = true;
+	}
 
 	if (config->popup_during_fullscreen == POPUP_LEAVE &&
 			container->pending.workspace &&

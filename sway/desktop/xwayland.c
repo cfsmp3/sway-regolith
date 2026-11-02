@@ -328,6 +328,7 @@ static xcb_get_property_reply_t *get_x_property(xcb_connection_t *xcb,
 
 static void read_float_hints(struct sway_xwayland_view *xwayland_view) {
 	struct wlr_xwayland_surface *xsurface = xwayland_view->view.wlr_xwayland_surface;
+	xwayland_view->desktop_all = false;
 	xwayland_view->transient_for = 0;
 	xwayland_view->client_leader = 0;
 	xcb_connection_t *xcb = server.xwayland.wlr_xwayland ?
@@ -336,7 +337,12 @@ static void read_float_hints(struct sway_xwayland_view *xwayland_view) {
 		return;
 	}
 	xcb_get_property_reply_t *r = get_x_property(xcb, xsurface->window_id,
-		"WM_TRANSIENT_FOR", XCB_ATOM_WINDOW);
+		"_NET_WM_DESKTOP", XCB_ATOM_CARDINAL);
+	if (r) {
+		xwayland_view->desktop_all = *(uint32_t *)xcb_get_property_value(r) == 0xFFFFFFFF;
+		free(r);
+	}
+	r = get_x_property(xcb, xsurface->window_id, "WM_TRANSIENT_FOR", XCB_ATOM_WINDOW);
 	if (r) {
 		xwayland_view->transient_for = *(uint32_t *)xcb_get_property_value(r);
 		free(r);
@@ -393,6 +399,9 @@ static bool wants_floating(struct sway_view *view) {
 	}
 
 	struct sway_xwayland_view *xwayland_view = xwayland_view_from_view(view);
+	if (xwayland_view->desktop_all) {
+		return true;
+	}
 	// Like i3, any WM_TRANSIENT_FOR counts, including one that points at the
 	// root window (as pinentry-gtk-2 does) and so leaves surface->parent unset.
 	if (surface->parent || xwayland_view->transient_for) {
@@ -408,6 +417,12 @@ static bool wants_floating(struct sway_view *view) {
 	}
 
 	return false;
+}
+
+static bool wants_sticky(struct sway_view *view) {
+	struct sway_xwayland_view *xwayland_view = xwayland_view_from_view(view);
+	return xwayland_view && (view->wlr_xwayland_surface->sticky ||
+		xwayland_view->desktop_all);
 }
 
 static void handle_set_decorations(struct wl_listener *listener, void *data) {
@@ -478,6 +493,7 @@ static const struct sway_view_impl view_impl = {
 	.set_tiled = set_tiled,
 	.set_fullscreen = set_fullscreen,
 	.wants_floating = wants_floating,
+	.wants_sticky = wants_sticky,
 	.is_transient_for = is_transient_for,
 	.close = _close,
 	.destroy = destroy,

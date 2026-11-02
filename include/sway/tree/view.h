@@ -55,6 +55,7 @@ struct sway_view_impl {
 	void (*set_fullscreen)(struct sway_view *view, bool fullscreen);
 	void (*set_resizing)(struct sway_view *view, bool resizing);
 	bool (*wants_floating)(struct sway_view *view);
+	bool (*wants_sticky)(struct sway_view *view);
 	bool (*is_transient_for)(struct sway_view *child,
 			struct sway_view *ancestor);
 	void (*close)(struct sway_view *view);
@@ -154,6 +155,7 @@ struct sway_xwayland_view {
 
 	struct wlr_scene_surface *image_capture_scene_surface;
 
+	bool desktop_all; // _NET_WM_DESKTOP == 0xFFFFFFFF at map
 	uint32_t transient_for; // WM_TRANSIENT_FOR at map, also when not a managed window
 	uint32_t client_leader; // WM_CLIENT_LEADER at map
 
