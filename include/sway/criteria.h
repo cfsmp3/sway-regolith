@@ -50,6 +50,8 @@ struct criteria {
 	bool all;
 	bool floating;
 	bool tiling;
+	char floating_from; // 'a' auto, 'u' user, 0 unset
+	char tiling_from;
 	char urgent; // 'l' for latest or 'o' for oldest
 	struct pattern *workspace;
 	pid_t pid;

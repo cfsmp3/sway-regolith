@@ -1044,6 +1044,10 @@ The following attributes may be matched with:
 *floating*
 	Matches floating windows.
 
+*floating_from*
+	Matches floating windows that were floated automatically (_auto_) or by a
+	command (_user_). Any other value is an error.
+
 *id*
 	Compare value against the X11 window ID. Must be numeric. id is specific to
 	X11 applications and requires XWayland.
@@ -1067,6 +1071,10 @@ The following attributes may be matched with:
 
 *tiling*
 	Matches tiling windows.
+
+*tiling_from*
+	Matches tiling windows that were never floated (_auto_) or that were tiled
+	by a command (_user_). Any other value is an error.
 
 *title*
 	Compare against the window title. Can be a regular expression. If value is

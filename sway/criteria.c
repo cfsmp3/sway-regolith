@@ -32,6 +32,8 @@ bool criteria_is_empty(struct criteria *criteria) {
 #endif
 		&& !criteria->floating
 		&& !criteria->tiling
+		&& !criteria->floating_from
+		&& !criteria->tiling_from
 		&& !criteria->urgent
 		&& !criteria->workspace
 		&& !criteria->pid
@@ -431,6 +433,20 @@ static bool criteria_matches_view(struct criteria *criteria,
 		}
 	}
 
+	if (criteria->floating_from) {
+		if (!container_is_floating(view->container) ||
+				view->container->floating_by_user != (criteria->floating_from == 'u')) {
+			return false;
+		}
+	}
+
+	if (criteria->tiling_from) {
+		if (container_is_floating(view->container) ||
+				view->container->floating_by_user != (criteria->tiling_from == 'u')) {
+			return false;
+		}
+	}
+
 	if (criteria->urgent) {
 		if (!view_is_urgent(view)) {
 			return false;
@@ -554,6 +570,8 @@ enum criteria_token {
 	T_CON_ID,
 	T_CON_MARK,
 	T_FLOATING,
+	T_FLOATING_FROM,
+	T_TILING_FROM,
 #if WLR_HAS_XWAYLAND
 	T_CLASS,
 	T_ID,
@@ -608,6 +626,10 @@ static enum criteria_token token_from_name(char *name) {
 		return T_TILING;
 	} else if (strcmp(name, "floating") == 0) {
 		return T_FLOATING;
+	} else if (strcmp(name, "floating_from") == 0) {
+		return T_FLOATING_FROM;
+	} else if (strcmp(name, "tiling_from") == 0) {
+		return T_TILING_FROM;
 	} else if (strcmp(name, "pid") == 0) {
 		return T_PID;
 	} else if (strcmp(name, "sandbox_engine") == 0) {
@@ -696,6 +718,19 @@ static bool parse_token(struct criteria *criteria, char *name, char *value) {
 	case T_TILING:
 		criteria->tiling = true;
 		break;
+	case T_FLOATING_FROM:
+	case T_TILING_FROM: {
+		char v = strcmp(value, "auto") == 0 ? 'a' : strcmp(value, "user") == 0 ? 'u' : 0;
+		if (!v) {
+			error = strdup("The value for 'floating_from' and 'tiling_from' "
+				"must be 'auto' or 'user'");
+		} else if (token == T_FLOATING_FROM) {
+			criteria->floating_from = v;
+		} else {
+			criteria->tiling_from = v;
+		}
+		break;
+	}
 	case T_URGENT:
 		if (strcmp(value, "latest") == 0 ||
 				strcmp(value, "newest") == 0 ||
