@@ -637,17 +637,7 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 	switch (payload_type) {
 	case IPC_COMMAND:
 	{
-		char *line = strtok(buf, "\n");
-		while (line) {
-			size_t line_length = strlen(line);
-			if (line + line_length >= buf + payload_length) {
-				break;
-			}
-			line[line_length] = ';';
-			line = strtok(NULL, "\n");
-		}
-
-		list_t *res_list = execute_command(buf, NULL, NULL);
+		list_t *res_list = execute_ipc_command(buf, payload_length);
 		if (modeset_is_pending()) {
 			// IPC expects commands to have taken immediate effect, so we need
 			// to force a modeset after output commands. We do a single modeset

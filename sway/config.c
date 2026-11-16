@@ -630,7 +630,7 @@ void run_deferred_commands(void) {
 	sway_log(SWAY_DEBUG, "Running deferred commands");
 	while (config->cmd_queue->length) {
 		char *line = config->cmd_queue->items[0];
-		list_t *res_list = execute_command(line, NULL, NULL);
+		list_t *res_list = execute_deferred_command(line);
 		for (int i = 0; i < res_list->length; ++i) {
 			struct cmd_results *res = res_list->items[i];
 			if (res->status != CMD_SUCCESS) {
@@ -729,6 +729,18 @@ static char *expand_line(const char *block, const char *line, bool add_brace) {
 	return expanded;
 }
 
+static void config_line_error(struct sway_config *config,
+		struct swaynag_instance *swaynag, int line_number, const char *line,
+		const char *error) {
+	sway_log(SWAY_ERROR, "Error on line %i '%s': %s (%s)", line_number,
+		line, error, config->current_config_path);
+	if (!config->validating) {
+		swaynag_log(config->swaynag_command, swaynag,
+			"Error on line %i (%s) '%s': %s", line_number,
+			config->current_config_path, line, error);
+	}
+}
+
 bool read_config(FILE *file, struct sway_config *config,
 		struct swaynag_instance *swaynag) {
 	bool reading_main_config = false;
@@ -811,17 +823,16 @@ bool read_config(FILE *file, struct sway_config *config,
 		switch(res->status) {
 		case CMD_FAILURE:
 		case CMD_INVALID:
-			sway_log(SWAY_ERROR, "Error on line %i '%s': %s (%s)", line_number,
-				line, res->error, config->current_config_path);
-			if (!config->validating) {
-				swaynag_log(config->swaynag_command, swaynag,
-					"Error on line %i (%s) '%s': %s", line_number,
-					config->current_config_path, line, res->error);
-			}
+			config_line_error(config, swaynag, line_number, line, res->error);
 			success = false;
 			break;
 
 		case CMD_DEFER:
+			if (res->error) {
+				// The command still runs later, but is in error as written
+				config_line_error(config, swaynag, line_number, line, res->error);
+				success = false;
+			}
 			sway_log(SWAY_DEBUG, "Deferring command `%s'", line);
 			list_add(config->cmd_queue, strdup(expanded));
 			break;

@@ -60,6 +60,20 @@ const struct cmd_handler *find_handler(const char *line,
 list_t *execute_command(char *command,  struct sway_seat *seat,
 		struct sway_container *con);
 /**
+ * Parse and executes a command received over IPC, of the given length.
+ *
+ * Line breaks separate commands like semicolons, except inside quotes in the
+ * argument of a launch command (exec or exec_always), which is read as sent.
+ */
+list_t *execute_ipc_command(const char *payload, size_t length);
+/**
+ * Executes a config command that was deferred until sway is running.
+ *
+ * Launch commands get the same reading as config commands run on reload; other
+ * commands are executed with execute_command.
+ */
+list_t *execute_deferred_command(char *line);
+/**
  * Parse and handles a command during config file loading.
  *
  * Do not use this under normal conditions.

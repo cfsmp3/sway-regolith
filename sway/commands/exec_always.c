@@ -26,23 +26,14 @@ struct cmd_results *cmd_exec_validate(int argc, char **argv) {
 }
 
 struct cmd_results *cmd_exec_process(int argc, char **argv) {
-	struct cmd_results *error = NULL;
-	char *cmd = NULL;
 	bool no_startup_id = false;
-	if (strcmp(argv[0], "--no-startup-id") == 0) {
+	if (argc > 1 && strcmp(argv[0], "--no-startup-id") == 0) {
 		no_startup_id = true;
 		--argc; ++argv;
-		if ((error = checkarg(argc, argv[-1], EXPECTED_AT_LEAST, 1))) {
-			return error;
-		}
 	}
 
-	if (argc == 1 && (argv[0][0] == '\'' || argv[0][0] == '"')) {
-		cmd = strdup(argv[0]);
-		strip_quotes(cmd);
-	} else {
-		cmd = join_args(argv, argc);
-	}
+	// The quotes and backslashes in the command have already been read
+	char *cmd = join_args(argv, argc);
 
 	sway_log(SWAY_DEBUG, "Executing %s", cmd);
 

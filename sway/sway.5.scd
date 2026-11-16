@@ -711,6 +711,36 @@ The default colors are:
 *exec* <shell command>
 	Executes _shell command_ with sh.
 
+	Quotes and backslashes in _shell command_ are read as i3 reads them, in
+	one of two ways.
+
+	In a config file line, at startup and on *reload* alike, a _shell command_
+	that starts with a double quote ends at the next double quote that has no
+	backslash directly in front of it. Anything but blanks after that quote is
+	reported as an error, although the command still runs. Any other _shell
+	command_ is the rest of the line, including any *;* or *,*. Only a
+	backslash directly in front of a double quote is removed.
+
+	Through *swaymsg*(1), and in a binding or *for_window* rule when it fires,
+	a backslash in a double-quoted _shell command_ always takes the next
+	character along with it, and only blanks may follow the closing quote
+	before the next *;*, *,* or line break. Anything else there is an error,
+	and the commands after it do not run. Any other _shell command_ ends at the
+	first *;*, *,* or line break that is not inside quotes. A backslash in
+	front of a double quote or in front of another backslash is removed.
+
+	A binding or rule written in the config file is read the first way when
+	the file is loaded and the second way when it fires, so it needs doubled
+	backslashes. In both readings, a _shell command_ that is exactly one
+	single-quoted string is run without those quotes, and an empty pair of
+	double quotes is an error. For example, to run a program whose path
+	contains a space:
+
+	```
+	exec "\\"/opt/My App/run me.sh\\" --flag"
+	bindsym $mod+y exec "\\\\"/opt/My App/run me.sh\\\\" --flag"
+	```
+
 *exec_always* <shell command>
 	Like *exec*, but the shell command will be executed _again_ after *reload*.
 
