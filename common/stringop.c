@@ -154,7 +154,8 @@ int unescape_string(char *string) {
 	int len = strlen(string);
 	int i;
 	for (i = 0; string[i]; ++i) {
-		if (string[i] == '\\') {
+		// A backslash at the end of the string is kept as it is
+		if (string[i] == '\\' && string[i + 1]) {
 			switch (string[++i]) {
 			case '0':
 				string[i - 1] = '\0';
