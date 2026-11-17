@@ -841,8 +841,15 @@ The default colors are:
 
 *mouse_warping* output|container|none
 	If _output_ is specified, the mouse will be moved to new outputs as you
-	move focus between them. If _container_ is specified, the mouse will be
-	moved to the middle of the container on switch. Default is _output_.
+	move focus between them: when a command, a window activation request or a
+	fullscreen request leaves a seat's focus on another output, and that seat's
+	mouse is not already on it, the mouse is moved to the middle of the focused
+	container or workspace, or to the nearest point of the output if that
+	middle lies outside it. A command that ends on the output it started on
+	does not move the mouse, nor does a window opening or closing. While a
+	layer surface such as a launcher has keyboard focus, the window that gets
+	focus back counts as focused. If _container_ is specified, the mouse will
+	be moved to the middle of the container on switch. Default is _output_.
 
 *no_focus* <criteria>
 	Prevents windows matching <criteria> from being focused automatically when

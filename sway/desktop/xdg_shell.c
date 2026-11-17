@@ -402,6 +402,7 @@ static void handle_request_fullscreen(struct wl_listener *listener, void *data) 
 		return;
 	}
 
+	list_t *prev_outputs = input_manager_get_focused_outputs();
 	struct sway_container *container = view->container;
 	struct wlr_xdg_toplevel_requested *req = &toplevel->requested;
 	if (req->fullscreen && req->fullscreen_output && req->fullscreen_output->data) {
@@ -420,6 +421,8 @@ static void handle_request_fullscreen(struct wl_listener *listener, void *data) 
 	container_set_fullscreen(container, req->fullscreen);
 
 	arrange_root();
+	// Moving the container to another output can take focus with it
+	input_manager_consider_warp_to_outputs(prev_outputs);
 	transaction_commit_dirty();
 }
 

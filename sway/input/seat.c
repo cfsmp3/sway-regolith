@@ -1457,6 +1457,22 @@ struct sway_workspace *seat_get_focused_workspace(struct sway_seat *seat) {
 	return NULL; // output doesn't have a workspace yet
 }
 
+/**
+ * Like seat_get_focus(), but while a layer surface has keyboard focus, return
+ * the node that gets it back when the layer surface releases it.
+ */
+static struct sway_node *seat_get_focus_below_layer(struct sway_seat *seat) {
+	if (seat->focused_layer) {
+		return seat_get_focus_inactive(seat, &root->node);
+	}
+	return seat_get_focus(seat);
+}
+
+struct sway_output *seat_get_focused_output(struct sway_seat *seat) {
+	struct sway_node *focus = seat_get_focus_below_layer(seat);
+	return focus ? node_get_output(focus) : NULL;
+}
+
 struct sway_workspace *seat_get_last_known_workspace(struct sway_seat *seat) {
 	struct sway_seat_node *current;
 	wl_list_for_each(current, &seat->focus_stack, link) {
@@ -1529,19 +1545,8 @@ void seat_pointer_notify_button(struct sway_seat *seat, uint32_t time_msec,
 
 void seat_consider_warp_to_focus(struct sway_seat *seat) {
 	struct sway_node *focus = seat_get_focus(seat);
-	if (config->mouse_warping == WARP_NO || !focus) {
+	if (config->mouse_warping != WARP_CONTAINER || !focus) {
 		return;
-	}
-	if (config->mouse_warping == WARP_OUTPUT) {
-		struct sway_output *output = node_get_output(focus);
-		if (output) {
-			struct wlr_box box;
-			output_get_box(output, &box);
-			if (wlr_box_contains_point(&box,
-						seat->cursor->cursor->x, seat->cursor->cursor->y)) {
-				return;
-			}
-		}
 	}
 
 	if (focus->type == N_CONTAINER) {
@@ -1549,6 +1554,41 @@ void seat_consider_warp_to_focus(struct sway_seat *seat) {
 	} else {
 		cursor_warp_to_workspace(seat->cursor, focus->sway_workspace);
 	}
+}
+
+void seat_consider_warp_to_output(struct sway_seat *seat,
+		struct sway_output *prev_output) {
+	struct sway_node *focus = seat_get_focus_below_layer(seat);
+	if (config->mouse_warping != WARP_OUTPUT || !focus) {
+		return;
+	}
+	struct sway_output *output = node_get_output(focus);
+	if (!output || output == prev_output) {
+		return;
+	}
+	struct wlr_box box;
+	output_get_box(output, &box);
+	if (wlr_box_contains_point(&box,
+				seat->cursor->cursor->x, seat->cursor->cursor->y)) {
+		return;
+	}
+
+	double x, y;
+	if (focus->type == N_CONTAINER) {
+		struct sway_container *con = focus->sway_container;
+		x = con->pending.x + con->pending.width / 2.0;
+		y = con->pending.y + con->pending.height / 2.0;
+	} else {
+		struct sway_workspace *ws = focus->sway_workspace;
+		x = ws->x + ws->width / 2.0;
+		y = ws->y + ws->height / 2.0;
+	}
+	// A floating container can stick out of its output; keep the cursor on
+	// the output that has focus
+	wlr_box_closest_point(&box, x, y, &x, &y);
+
+	wlr_cursor_warp(seat->cursor->cursor, NULL, x, y);
+	cursor_unhide(seat->cursor);
 }
 
 void seatop_unref(struct sway_seat *seat, struct sway_container *con) {

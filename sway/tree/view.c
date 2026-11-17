@@ -24,6 +24,7 @@
 #include "sway/desktop/idle_inhibit_v1.h"
 #include "sway/desktop/launcher.h"
 #include "sway/input/cursor.h"
+#include "sway/input/input-manager.h"
 #include "sway/ipc-server.h"
 #include "sway/output.h"
 #include "sway/input/seat.h"
@@ -478,6 +479,7 @@ void view_request_activate(struct sway_view *view, struct sway_seat *seat) {
 	if (!seat) {
 		seat = input_manager_current_seat();
 	}
+	struct sway_output *prev_output = seat_get_focused_output(seat);
 
 	switch (config->focus_on_window_activation) {
 	case FOWA_SMART:
@@ -502,6 +504,7 @@ void view_request_activate(struct sway_view *view, struct sway_seat *seat) {
 	case FOWA_NONE:
 		break;
 	}
+	seat_consider_warp_to_output(seat, prev_output);
 	transaction_commit_dirty();
 }
 
@@ -738,11 +741,13 @@ static void handle_foreign_activate_request(
 	struct sway_seat *seat;
 	wl_list_for_each(seat, &server.input->seats, link) {
 		if (seat->wlr_seat == event->seat) {
+			struct sway_output *prev_output = seat_get_focused_output(seat);
 			if (container_is_scratchpad_hidden_or_child(view->container)) {
 				root_scratchpad_show(view->container);
 			}
 			seat_set_focus_container(seat, view->container);
 			seat_consider_warp_to_focus(seat);
+			seat_consider_warp_to_output(seat, prev_output);
 			container_raise_floating(view->container);
 			break;
 		}
@@ -755,6 +760,7 @@ static void handle_foreign_fullscreen_request(
 	struct sway_view *view = wl_container_of(
 			listener, view, foreign_fullscreen_request);
 	struct wlr_foreign_toplevel_handle_v1_fullscreen_event *event = data;
+	list_t *prev_outputs = input_manager_get_focused_outputs();
 
 	// Match fullscreen command behavior for scratchpad hidden views
 	struct sway_container *container = view->container;
@@ -787,6 +793,8 @@ static void handle_foreign_fullscreen_request(
 			arrange_workspace(container->pending.workspace);
 		}
 	}
+	// Moving the container to another output can take focus with it
+	input_manager_consider_warp_to_outputs(prev_outputs);
 	transaction_commit_dirty();
 }
 

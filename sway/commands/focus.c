@@ -296,8 +296,6 @@ static struct cmd_results *focus_mode(struct sway_workspace *ws,
 		// to anyway.
 		if (config->mouse_warping == WARP_CONTAINER) {
 			cursor_warp_to_container(seat->cursor, new_focus, true);
-		} else {
-			seat_consider_warp_to_focus(seat);
 		}
 	} else {
 		return cmd_results_new(CMD_FAILURE,

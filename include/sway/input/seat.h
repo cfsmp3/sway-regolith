@@ -199,6 +199,13 @@ struct sway_node *seat_get_focus(struct sway_seat *seat);
 
 struct sway_workspace *seat_get_focused_workspace(struct sway_seat *seat);
 
+/**
+ * Return the output of the seat's focused node, or NULL if there is none.
+ * While a layer surface has keyboard focus, this is the output of the node
+ * that gets focus back when the layer surface releases it.
+ */
+struct sway_output *seat_get_focused_output(struct sway_seat *seat);
+
 // If a scratchpad container is fullscreen global, this can be used to try to
 // determine the last focused workspace. Otherwise, this should yield the same
 // results as seat_get_focused_workspace.
@@ -289,7 +296,21 @@ struct sway_container *seat_get_focus_inactive_floating(struct sway_seat *seat,
 void seat_pointer_notify_button(struct sway_seat *seat, uint32_t time_msec,
 		uint32_t button, enum wl_pointer_button_state state);
 
+/**
+ * With `mouse_warping container`, warp the cursor to the focused container or
+ * workspace. Does nothing in the other modes.
+ */
 void seat_consider_warp_to_focus(struct sway_seat *seat);
+
+/**
+ * With `mouse_warping output`, warp the cursor to the middle of the focused
+ * container or workspace (clamped to its output) if the focused output is no
+ * longer `prev_output` and the cursor is not already on it. While a layer
+ * surface has keyboard focus, the node that gets focus back counts as focused.
+ * Does nothing in the other modes.
+ */
+void seat_consider_warp_to_output(struct sway_seat *seat,
+		struct sway_output *prev_output);
 
 void seatop_button(struct sway_seat *seat, uint32_t time_msec,
 		struct wlr_input_device *device, uint32_t button,

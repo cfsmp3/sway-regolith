@@ -225,6 +225,13 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 		return NULL;
 	}
 
+	// Only the outermost command list decides whether cursors follow focus to
+	// another output; nested ones (such as for_window rules run by a command)
+	// are part of it. Any seat's focus can be moved, so record every seat
+	static int depth = 0;
+	list_t *prev_outputs =
+		depth++ == 0 ? input_manager_get_focused_outputs() : NULL;
+
 	config->handler_context.seat = seat;
 
 	do {
@@ -328,6 +335,9 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 		free_argv(argc, argv);
 	} while(head);
 cleanup:
+	if (--depth == 0) {
+		input_manager_consider_warp_to_outputs(prev_outputs);
+	}
 	free(exec);
 	list_free(containers);
 	return res_list;

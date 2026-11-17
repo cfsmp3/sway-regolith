@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
@@ -500,6 +501,48 @@ void input_manager_set_focus(struct sway_node *node) {
 		seat_set_focus(seat, node);
 		seat_consider_warp_to_focus(seat);
 	}
+}
+
+struct seat_focused_output {
+	struct sway_seat *seat;
+	struct sway_output *output;
+};
+
+list_t *input_manager_get_focused_outputs(void) {
+	list_t *outputs = create_list();
+	if (!outputs) {
+		return NULL;
+	}
+	struct sway_seat *seat;
+	wl_list_for_each(seat, &server.input->seats, link) {
+		struct seat_focused_output *entry = malloc(sizeof(*entry));
+		if (!entry) {
+			continue;
+		}
+		entry->seat = seat;
+		entry->output = seat_get_focused_output(seat);
+		list_add(outputs, entry);
+	}
+	return outputs;
+}
+
+void input_manager_consider_warp_to_outputs(list_t *prev_outputs) {
+	if (!prev_outputs) {
+		return;
+	}
+	// Match seats by pointer: a command can create a seat, and new seats are
+	// added at the front of the list
+	struct sway_seat *seat;
+	wl_list_for_each(seat, &server.input->seats, link) {
+		for (int i = 0; i < prev_outputs->length; i++) {
+			struct seat_focused_output *entry = prev_outputs->items[i];
+			if (entry->seat == seat) {
+				seat_consider_warp_to_output(seat, entry->output);
+				break;
+			}
+		}
+	}
+	list_free_items_and_destroy(prev_outputs);
 }
 
 /**

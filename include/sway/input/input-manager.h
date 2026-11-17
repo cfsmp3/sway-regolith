@@ -45,6 +45,19 @@ bool input_manager_has_focus(struct sway_node *node);
 
 void input_manager_set_focus(struct sway_node *node);
 
+/**
+ * Record the focused output of every seat, for
+ * input_manager_consider_warp_to_outputs() once focus may have moved.
+ */
+list_t *input_manager_get_focused_outputs(void);
+
+/**
+ * Call seat_consider_warp_to_output() for every seat recorded in
+ * `prev_outputs` with the output it had focused then, and free the list.
+ * Seats created since the list was made are left alone.
+ */
+void input_manager_consider_warp_to_outputs(list_t *prev_outputs);
+
 void input_manager_configure_xcursor(void);
 
 void input_manager_apply_input_config(struct input_config *input_config);
